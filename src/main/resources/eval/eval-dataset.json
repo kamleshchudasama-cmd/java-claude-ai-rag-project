@@ -1,0 +1,52 @@
+[
+  {
+    "question": "What was Kamlesh Chudasama's net pay for January 2026?",
+    "ground_truth": "The net pay for January 2026 was Rs 229,325.00.",
+    "ground_truth_context": "GROSS EARNINGS 231,325.00 963,250.00 GROSS DEDUCTION 2,000.00 20,012.00\n\nNET PAY : 229,325.00"
+  },
+  {
+    "question": "What was the net transfer amount (including reimbursements) credited to Kamlesh Chudasama's account for January 2026?",
+    "ground_truth": "The net transfer amount credited to the bank account, including reimbursements, was Rs 233,700.00.",
+    "ground_truth_context": "REIMBURSEMENTS AMOUNT YTD\n\nLTA 4375.00 43750.00\n\nTOTAL REIMBURSEMENT 4375.00 43750.00\n\nNET TRANSFER : 233,700.00\n\nIN WORDS : Rupees Two Lacs Thirty-Three Thousand Seven Hundred and Only"
+  },
+  {
+    "question": "What was the closing balance of Privilege Leave (PL) after January 2026?",
+    "ground_truth": "The closing balance of Privilege Leave (PL) after January 2026 was 26.00 days. The opening balance was 24.25 days, with an addition of 1.75 days and zero days availed.",
+    "ground_truth_context": "Types of Leave Opening Balance Addition For The Month Availed For The Month Closing Balance\n\nCL 7.00 0.00 0.00 7.00\n\nSL 7.42 0.00 1.00 6.42\n\nPL 24.25 1.75 0.00 26.00"
+  },
+  {
+    "question": "What was the root cause identified for the CNA bulk file download failure in incident INC0118019?",
+    "ground_truth": "The root cause was that the bulk file download fails when there are no data requests in the queue. The file downloads successfully only when the user has pending data requests. The application should display a meaningful message in this scenario instead of showing a download error.",
+    "ground_truth_context": "Created By: Venkata.Bonam@tangoe.com On 2026-03-13 15:58:21 ** (Public Comments)\nHi @Meghana N, We have replicated the issue and confirmed that it occurs when there are no data requests in the queue. The file downloads successfully only when the user has pending data requests. In this scenario, the application should display a meaningful message instead of showing a download error. We will create a Jira ticket to address this."
+  },
+  {
+    "question": "Who opened incident INC0118019, on what date, and which application and customer URL were affected?",
+    "ground_truth": "The incident was opened by hari.battala@tangoe.com on 2026-03-11 at 13:47:45. The affected application was Command Center, accessible at https://cnain.one.tangoe.com/dataRequests.",
+    "ground_truth_context": "Incident Number: INC0118019\n\nOpened by: hari.battala@tangoe.com\n\nOpened on: 2026-03-11 13:47:45\n\nCustomer URL: https://cnain.one.tangoe.com/dataRequests\n\nApplication: Command Center"
+  },
+  {
+    "question": "What was the gross salary and income chargeable under salaries reported in the ITR for assessment year 2023-24?",
+    "ground_truth": "The gross salary (salary as per section 17(1)) was Rs 4,69,230. After deductions under section 16 totalling Rs 52,400 (including standard deduction of Rs 50,000 and professional tax of Rs 2,400), the income chargeable under the head Salaries was Rs 4,16,830.",
+    "ground_truth_context": "B1 i Gross Salary (ia + ib + ic + id + ie) i 4,69,230\n\na Salary as per section 17(1) ia 4,69,230\n\niv Deductions u/s 16 (iva + ivb + ivc) iv 52,400\n\na Standard deduction u/s 16(ia) iva 50,000\n\nc Professional tax u/s 16(iii) ivc 2,400\n\nv Income chargeable under the head 'Salaries' (iii - iv) B1 4,16,830"
+  },
+  {
+    "question": "What was the total income and the tax payable outcome in the ITR for assessment year 2023-24?",
+    "ground_truth": "The total income for AY 2023-24 was Rs 3,93,750. The tax payable on total income was Rs 7,188, which was fully offset by the rebate under section 87A, resulting in zero tax payable, zero cess, and zero amount due.",
+    "ground_truth_context": "Total Income 3,93,750\n\nPART D - COMPUTATION OF TAX PAYABLE\n\nD1 Tax payable on total income D1 7,188\n\nD2 Rebate u/s 87A D2 7,188\n\nD3 Tax after rebate D3 0\n\nD4 Health and education Cess @4% on D3 D4 0\n\nD5 Total Tax and Cess D5 0\n\nD13 Amount payable (D11-D12) (if D11>D12) D13 0\n\nD14 Refund (D12 - D11) (if D12 > D11) D14 0"
+  },
+  {
+    "question": "What deduction was claimed under section 80C in the ITR for assessment year 2023-24?",
+    "ground_truth": "A deduction of Rs 23,165 was claimed under section 80C (life insurance premia, deferred annuity, contributions to provident fund, subscription to certain equity shares or debentures, etc.) in the ITR for AY 2023-24. This was also the total deductions amount (C21).",
+    "ground_truth_context": "C1 80C - Life insurance premia, deferred annuity, contributions to provident fund, subscription to certain equity shares or debentures, etc. 23,165\n\nC21 Total deductions (Add items C1 to C18) 23,165"
+  },
+  {
+    "question": "What was the gross salary and the income chargeable under salaries for assessment year 2024-25?",
+    "ground_truth": "The gross salary (salary as per section 17(1)) for AY 2024-25 was Rs 8,79,408. After a standard deduction of Rs 50,000 under section 16(ia) and no professional tax, the income chargeable under the head Salaries was Rs 8,29,408.",
+    "ground_truth_context": "B1 i Gross Salary (ia + ib + ic + id + ie) i 8,79,408\n\na Salary as per section 17(1) ia 8,79,408\n\niv Deductions u/s 16 (iva + ivb + ivc) iv 50,000\n\na Standard deduction u/s 16(ia) iva 50,000\n\nc Professional tax u/s 16(iii) ivc 0\n\nv Income chargeable under the head 'Salaries' (iii - iv) B1 8,29,408"
+  },
+  {
+    "question": "What was the tax refund and total taxes paid for assessment year 2024-25?",
+    "ground_truth": "For AY 2024-25, the total taxes paid (TDS) were Rs 76,525, deducted by Jeavio (India) Private Limited. The total tax and cess payable was Rs 39,870, resulting in a refund of Rs 36,660.",
+    "ground_truth_context": "D5 Total Tax and Cess D5 39,870\n\nD11 Total Tax, Fee and Interest (D5 + D7 + D8 + D9 + D10 - D6) D11 39,870\n\nD12 Total Taxes Paid D12 76,525\n\nD13 Amount payable (D11-D12) (if D11>D12) D13 0\n\nD14 Refund (D12 - D11) (if D12 > D11) D14 36,660\n\n1 BRDJ02229D JEAVIO (INDIA) PRIVATE LIMITED 8,05,408 76,525"
+  }
+]

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn dependency:tree)",
+      "Bash(mvn test:*)",
+      "Bash(jar tf:*)",
+      "Bash(mvn clean:*)",
+      "Bash(docker exec pgvector:*)"
+    ]
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "tools": [
+    {
+      "name": "check_pgvector",
+      "description": "Verifies PGVector is running, checks the vector_store table exists, and returns row count. Use this before any ingestion or retrieval debugging.",
+      "type": "bash",
+      "command": "docker exec pgvector psql -U rag -d ragdb -c \"SELECT COUNT(*) AS total_chunks, pg_size_pretty(pg_total_relation_size('vector_store')) AS table_size FROM vector_store;\" && docker exec pgvector psql -U rag -d ragdb -c \"SELECT indexname, indexdef FROM pg_indexes WHERE tablename = 'vector_store';\""
+    },
+    {
+      "name": "query_vectors",
+      "description": "Runs a raw cosine similarity search against PGVector for debugging retrieval. Pass a pre-computed embedding array as JSON and a top-k count to see what chunks would be returned and their similarity scores.",
+      "type": "bash",
+      "command": "docker exec pgvector psql -U rag -d ragdb -c \"SELECT id, content, metadata, 1 - (embedding <=> '${embedding}'::vector) AS similarity FROM vector_store ORDER BY embedding <=> '${embedding}'::vector LIMIT ${top_k};\"",
+      "inputs": {
+        "embedding": {
+          "type": "string",
+          "description": "JSON array of floats representing the query embedding, e.g. [0.123, -0.456, ...]"
+        },
+        "top_k": {
+          "type": "number",
+          "description": "Number of nearest neighbours to return (default 5)",
+          "default": 5
+        }
+      }
+    },
+    {
+      "name": "get_embedding_model_info",
+      "description": "Returns the configured embedding model name, vector dimensions, and distance type by reading the resolved Spring application config. Confirms what model is actually wired — useful after config changes.",
+      "type": "bash",
+      "command": "mvn -q spring-boot:run -Dspring-boot.run.arguments='--spring.main.web-application-type=none --rag.print-config=true' 2>/dev/null | grep -E 'embedding.model|dimensions|distance-type' || grep -E 'embedding|dimensions|distance' src/main/resources/application.yml"
+    }
+  ]
+}
