@@ -23,7 +23,7 @@ This is the **only** class in the codebase that may import `VectorStore` or exec
 - `search` must filter results to `similarity >= threshold` before returning.
 - **Do not** import `VectorStore`, `JdbcTemplate`, or any datasource outside this class.
 - **Do not** call embedding or generation services — this class is pure storage I/O.
-- Index: HNSW    Distance: COSINE_DISTANCE    Dimensions: 1024 (configured in `application.properties`).
+- Index: HNSW    Distance: COSINE_DISTANCE    Dimensions: 1536 (configured in `application.properties`).
 
 ## Dependencies
 - `VectorStore` bean (auto-configured by `spring-ai-starter-vector-store-pgvector`)
