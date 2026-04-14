@@ -17,14 +17,14 @@ import java.util.List;
 import java.util.Objects;
 
 @Service
-public class AnthropicEmbeddingService implements EmbeddingService {
+public class OpenAiEmbeddingService implements EmbeddingService {
 
-    private static final Logger log = LoggerFactory.getLogger(AnthropicEmbeddingService.class);
+    private static final Logger log = LoggerFactory.getLogger(OpenAiEmbeddingService.class);
 
     private final EmbeddingModel embeddingModel;
     private final RagProperties props;
 
-    public AnthropicEmbeddingService(EmbeddingModel embeddingModel, RagProperties props) {
+    public OpenAiEmbeddingService(EmbeddingModel embeddingModel, RagProperties props) {
         this.embeddingModel = embeddingModel;
         this.props = props;
     }

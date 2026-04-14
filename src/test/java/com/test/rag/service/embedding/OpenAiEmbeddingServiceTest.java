@@ -9,9 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.ai.embedding.Embedding;
 import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.ai.embedding.EmbeddingResponse;
-import org.springframework.ai.embedding.Embedding;
 
 import java.util.List;
 import java.util.Map;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class AnthropicEmbeddingServiceTest {
+class OpenAiEmbeddingServiceTest {
 
     @Mock
     private EmbeddingModel embeddingModel;
@@ -38,7 +38,7 @@ class AnthropicEmbeddingServiceTest {
     void setUp() {
         props = new RagProperties();
         props.setEmbeddingBatchSize(32);
-        service = new AnthropicEmbeddingService(embeddingModel, props);
+        service = new OpenAiEmbeddingService(embeddingModel, props);
     }
 
     @Test
@@ -65,7 +65,6 @@ class AnthropicEmbeddingServiceTest {
     @Test
     void embed_vectorsAreNormalized() {
         List<DocumentChunk> chunks = List.of(chunk("c1", "Test"));
-        // Raw vector with L2 norm = 5.0 (3,4 → norm=5)
         when(embeddingModel.embedForResponse(anyList()))
                 .thenReturn(fakeResponse(new float[]{3.0f, 4.0f}));
 
@@ -93,7 +92,6 @@ class AnthropicEmbeddingServiceTest {
         List<DocumentChunk> chunks = java.util.stream.IntStream.range(0, 100)
                 .mapToObj(i -> chunk("c" + i, "content " + i))
                 .toList();
-        // Return 32, 32, 32, 4 embeddings per batch
         when(embeddingModel.embedForResponse(anyList()))
                 .thenAnswer(inv -> {
                     List<String> texts = inv.getArgument(0);
