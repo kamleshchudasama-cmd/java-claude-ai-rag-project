@@ -6,9 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.retry.annotation.EnableRetry;
 
-@SpringBootApplication(exclude = {
-    org.springframework.ai.model.openai.autoconfigure.OpenAiEmbeddingAutoConfiguration.class
-})
+@SpringBootApplication
 @EnableConfigurationProperties(RagProperties.class)
 @EnableRetry
 public class RagApplication {
