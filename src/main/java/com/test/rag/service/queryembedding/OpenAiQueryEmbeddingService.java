@@ -6,14 +6,14 @@ import org.springframework.ai.embedding.EmbeddingModel;
 import org.springframework.stereotype.Service;
 
 @Service
-public class AnthropicQueryEmbeddingService implements QueryEmbeddingService {
+public class OpenAiQueryEmbeddingService implements QueryEmbeddingService {
 
-    private static final Logger log = LoggerFactory.getLogger(AnthropicQueryEmbeddingService.class);
+    private static final Logger log = LoggerFactory.getLogger(OpenAiQueryEmbeddingService.class);
     private static final int LOG_QUERY_MAX_CHARS = 200;
 
     private final EmbeddingModel embeddingModel;
 
-    public AnthropicQueryEmbeddingService(EmbeddingModel embeddingModel) {
+    public OpenAiQueryEmbeddingService(EmbeddingModel embeddingModel) {
         this.embeddingModel = embeddingModel;
     }
 
