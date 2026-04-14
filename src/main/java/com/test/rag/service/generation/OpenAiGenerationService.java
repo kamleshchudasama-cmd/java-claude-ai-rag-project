@@ -18,14 +18,14 @@ import java.util.List;
 import java.util.Objects;
 
 @Service
-public class GeminiGenerationService implements GenerationService {
+public class OpenAiGenerationService implements GenerationService {
 
-    private static final Logger log = LoggerFactory.getLogger(GeminiGenerationService.class);
+    private static final Logger log = LoggerFactory.getLogger(OpenAiGenerationService.class);
 
     private final ChatClient chatClient;
     private final RagProperties props;
 
-    public GeminiGenerationService(ChatClient chatClient, RagProperties props) {
+    public OpenAiGenerationService(ChatClient chatClient, RagProperties props) {
         this.chatClient = chatClient;
         this.props = props;
     }
@@ -33,8 +33,8 @@ public class GeminiGenerationService implements GenerationService {
     @Override
     @Retryable(
             retryFor = HttpClientErrorException.TooManyRequests.class,
-            maxAttempts = 4,
-            backoff = @Backoff(delay = 31_000, multiplier = 1.5)
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 10_000)
     )
     public RagResponse generate(BuiltContext context) {
         long start = System.currentTimeMillis();
