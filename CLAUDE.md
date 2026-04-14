@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview — Java RAG System
 A Retrieval-Augmented Generation pipeline built on Spring Boot + Spring AI.
 Ingests multi-format documents (PDF, DOCX, HTML) via Apache Tika, embeds chunks
-using Anthropic Embeddings API, stores vectors in PGVector, retrieves via cosine
-similarity, and generates cited answers via Gemini-2.5-flash through Spring AI.
+using OpenAI Embeddings API, stores vectors in PGVector, retrieves via cosine
+similarity, and generates cited answers via gpt-4o-mini through Spring AI.
 
 ---
 
@@ -15,8 +15,8 @@ similarity, and generates cited answers via Gemini-2.5-flash through Spring AI.
     AI Abstraction      Spring AI                    1.0.0
     Vector Store        PGVector on PostgreSQL        pg 16, pgvector 0.7.x
     Document Parsing    Apache Tika                  2.9.x
-    Embeddings          Anthropic Embeddings API      via Spring AI
-    Generation          Gemini-2.5-flash             via Spring AI Google Vertex AI
+    Embeddings          OpenAI text-embedding-3-small  via Spring AI (1536 dims)
+    Generation          OpenAI gpt-4o-mini             via Spring AI
     Build               Maven                        3.9.x
     Language            Java                         21
 
@@ -59,18 +59,15 @@ Spring AI auto-creates the `vector_store` table on startup when
 
 ## Environment Variables (never hardcode values)
 ```bash
-# Anthropic
-ANTHROPIC_API_KEY=...
-
-# Google (Gemini)
-GOOGLE_API_KEY=...
+# OpenAI
+OPENAI_API_KEY=...
 
 # PostgreSQL
 SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/ragdb
 SPRING_DATASOURCE_USERNAME=rag
 SPRING_DATASOURCE_PASSWORD=rag
 ```
-Reference in `application.properties` as `${ANTHROPIC_API_KEY}`, etc.
+Reference in `application.properties` as `${OPENAI_API_KEY}`, etc.
 
 ---
 
@@ -78,21 +75,18 @@ Reference in `application.properties` as `${ANTHROPIC_API_KEY}`, etc.
 ```yaml
 spring:
   ai:
-    anthropic:
-      api-key: ${ANTHROPIC_API_KEY}
+    openai:
+      api-key: ${OPENAI_API_KEY}
+      chat:
+        options:
+          model: gpt-4o-mini
       embedding:
-        model: voyage-3                  # Anthropic embedding model
-        dimensions: 1024
-    google:
-      api-key: ${GOOGLE_API_KEY}
-      gemini:
-        model: gemini-2.5-flash
-        temperature: 0.2
-        max-output-tokens: 2048
+        options:
+          model: text-embedding-3-small
     vectorstore:
       pgvector:
         initialize-schema: true
-        dimensions: 1024                 # must match embedding dimensions
+        dimensions: 1536
         distance-type: COSINE_DISTANCE
         index-type: HNSW
 ```
@@ -105,12 +99,12 @@ src/main/java/com/yourorg/rag/
 ├── service/
 │   ├── DocumentLoaderService.java    # Tika-based file ingestion
 │   ├── ChunkingService.java          # overlapping token-based splitting
-│   ├── EmbeddingService.java         # Anthropic embed via Spring AI
+│   ├── EmbeddingService.java         # OpenAI embed via Spring AI
 │   ├── VectorStoreService.java       # PGVector read/write abstraction
 │   ├── QueryEmbeddingService.java    # embed user queries
 │   ├── RetrievalService.java         # cosine similarity top-k search
 │   ├── ContextBuilderService.java    # assemble grounded prompt
-│   └── GenerationService.java        # Gemini call, return cited answer
+│   └── GenerationService.java        # gpt-4o-mini call, return cited answer
 ├── config/
 │   ├── SpringAiConfig.java           # bean wiring for AI clients
 │   └── RagProperties.java            # @ConfigurationProperties POJO
@@ -136,11 +130,11 @@ All values in `RagProperties.java` — **never hardcode in service classes**.
 
 ## Service Contracts (invariants — do not change without updating this file)
 
-1. **Never call the Gemini API directly — always go through Spring AI abstraction.**
-   Use `ChatClient` bean, not raw HTTP or Google SDK.
+1. **Never call the OpenAI API directly — always go through Spring AI abstraction.**
+   Use `ChatClient` bean, not raw HTTP or OpenAI SDK.
 
-2. **Never call the Anthropic Embeddings API directly — always use Spring AI's
-   `EmbeddingClient` bean.**
+2. **Never call the OpenAI Embeddings API directly — always use Spring AI's
+   `EmbeddingModel` bean.**
 
 3. `VectorStoreService` is the single point of contact with PGVector.
    No other service imports `VectorStore` or runs SQL directly.
@@ -172,9 +166,8 @@ All values in `RagProperties.java` — **never hardcode in service classes**.
 </dependencyManagement>
 
 <!-- Core -->
-<dependency>org.springframework.ai:spring-ai-anthropic-spring-boot-starter</dependency>
-<dependency>org.springframework.ai:spring-ai-pgvector-store-spring-boot-starter</dependency>
-<dependency>org.springframework.ai:spring-ai-vertex-ai-gemini-spring-boot-starter</dependency>
+<dependency>org.springframework.ai:spring-ai-starter-model-openai</dependency>
+<dependency>org.springframework.ai:spring-ai-starter-vector-store-pgvector</dependency>
 
 <!-- Tika -->
 <dependency>
@@ -196,7 +189,7 @@ All values in `RagProperties.java` — **never hardcode in service classes**.
 See `docs/specs/` — always check for an existing spec before implementing a feature.
 
 ## What NOT to Do
-- Do not bypass Spring AI to call Gemini or Anthropic APIs via raw HTTP
+- Do not bypass Spring AI to call OpenAI APIs via raw HTTP
 - Do not put chunking params as magic numbers in `ChunkingService`
 - Do not run PGVector SQL outside `VectorStoreService`
 - Do not change embedding dimensions without reindexing the vector table

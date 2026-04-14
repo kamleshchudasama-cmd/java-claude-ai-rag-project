@@ -18,4 +18,4 @@ so query-time telemetry and future caching are isolated from ingestion concerns.
 - **Do not** call `EmbeddingService` — they share the bean but are independent services.
 
 ## Dependencies
-- `EmbeddingModel` bean (auto-configured by `spring-ai-starter-model-anthropic`)
+- `EmbeddingModel` bean (auto-configured by `spring-ai-starter-model-openai`)
