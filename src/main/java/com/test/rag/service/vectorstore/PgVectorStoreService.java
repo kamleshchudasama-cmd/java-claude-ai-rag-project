@@ -1,6 +1,7 @@
 package com.test.rag.service.vectorstore;
 
 import com.test.rag.model.DocumentChunk;
+import com.test.rag.model.DocumentSummary;
 import com.test.rag.model.EmbeddedChunk;
 import com.test.rag.model.ScoredChunk;
 import org.slf4j.Logger;
@@ -10,8 +11,10 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,24 +69,75 @@ public class PgVectorStoreService implements VectorStoreService {
     }
 
     @Override
-    public void deleteBySource(String filename) {
+    @Transactional
+    public boolean deleteBySource(String sourceId) {
         FilterExpressionBuilder b = new FilterExpressionBuilder();
         SearchRequest request = SearchRequest.builder()
                 .query(" ")
                 .topK(10_000)
                 .similarityThreshold(0.0)
-                .filterExpression(b.eq("filename", filename).build())
+                .filterExpression(b.eq("source_id", sourceId).build())
                 .build();
 
         List<Document> found = vectorStore.similaritySearch(request);
         if (found.isEmpty()) {
-            log.warn("deleteBySource: no chunks found for filename='{}'", filename);
-            return;
+            log.warn("deleteBySource: no chunks found for sourceId='{}'", sourceId);
+            return false;
         }
 
         List<String> ids = found.stream().map(Document::getId).toList();
         vectorStore.delete(ids);
-        log.info("deleteBySource: deleted chunks={} filename='{}'", ids.size(), filename);
+        log.info("deleteBySource: deleted chunks={} sourceId='{}'", ids.size(), sourceId);
+        return true;
+    }
+
+    @Override
+    public List<DocumentSummary> listDocuments() {
+        long start = System.currentTimeMillis();
+
+        SearchRequest request = SearchRequest.builder()
+                .query(" ")
+                .topK(10_000)
+                .similarityThreshold(0.0)
+                .build();
+
+        List<Document> allChunks = vectorStore.similaritySearch(request);
+
+        // Group chunks by filename, then roll up metadata per document
+        Map<String, List<Document>> byFilename = allChunks.stream()
+                .collect(Collectors.groupingBy(doc ->
+                        String.valueOf(doc.getMetadata().getOrDefault("filename", "unknown"))));
+
+        List<DocumentSummary> summaries = byFilename.entrySet().stream()
+                .map(entry -> {
+                    String filename = entry.getKey();
+                    List<Document> chunks = entry.getValue();
+                    // Use first chunk's metadata for document-level fields
+                    Map<String, Object> meta = chunks.get(0).getMetadata();
+
+                    int totalTokens = chunks.stream()
+                            .mapToInt(d -> parseIntOrZero(d.getMetadata().get("tokenCount")))
+                            .sum();
+
+                    return new DocumentSummary(
+                            filename,
+                            nullableString(meta.get("source_id")),
+                            nullableString(meta.get("content-type")),
+                            nullableString(meta.get("author")),
+                            nullableString(meta.get("created-date")),
+                            nullableString(meta.get("upload-timestamp")),
+                            parseLongOrZero(meta.get("file-size-bytes")),
+                            chunks.size(),
+                            totalTokens
+                    );
+                })
+                .sorted(Comparator.comparing(DocumentSummary::filename))
+                .toList();
+
+        log.info("listDocuments documents={} totalChunks={} latencyMs={}",
+                summaries.size(), allChunks.size(), System.currentTimeMillis() - start);
+
+        return summaries;
     }
 
     private Document toDocument(EmbeddedChunk embedded) {
@@ -129,5 +183,20 @@ public class PgVectorStoreService implements VectorStoreService {
         } catch (NumberFormatException e) {
             return 0;
         }
+    }
+
+    private long parseLongOrZero(Object value) {
+        if (Objects.isNull(value)) {
+            return 0L;
+        }
+        try {
+            return Long.parseLong(String.valueOf(value));
+        } catch (NumberFormatException e) {
+            return 0L;
+        }
+    }
+
+    private String nullableString(Object value) {
+        return Objects.nonNull(value) ? String.valueOf(value) : null;
     }
 }

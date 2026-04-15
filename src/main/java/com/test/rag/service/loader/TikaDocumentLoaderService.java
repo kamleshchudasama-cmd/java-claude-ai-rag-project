@@ -22,7 +22,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Instant;
 import java.util.HexFormat;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -106,13 +108,18 @@ public class TikaDocumentLoaderService implements DocumentLoaderService {
         log.info("Parsed file='{}' contentType='{}' chars={} latencyMs={}",
                 filename, detectedContentType, content.length(), latencyMs);
 
+        String sourceId = computeSourceId(filename, fileSize);
+
         Map<String, String> metadata = new LinkedHashMap<>();
         metadata.put("filename", filename);
+        metadata.put("source_id", sourceId);
         putIfNonNull(metadata, "content-type", detectedContentType);
         putIfNonNull(metadata, "author", tikaMetadata.get(TikaCoreProperties.CREATOR));
         putIfNonNull(metadata, "created-date", tikaMetadata.get(TikaCoreProperties.CREATED));
+        metadata.put("upload-timestamp", Instant.now().toString());
+        metadata.put("file-size-bytes", String.valueOf(fileSize));
 
-        return new ParsedDocument(content, metadata, computeSourceId(filename, fileSize));
+        return new ParsedDocument(content, Collections.unmodifiableMap(metadata), sourceId);
     }
 
     private void putIfNonNull(Map<String, String> map, String key, String value) {

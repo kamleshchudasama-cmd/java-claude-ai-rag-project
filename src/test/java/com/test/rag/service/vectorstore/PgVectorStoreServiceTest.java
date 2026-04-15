@@ -13,8 +13,10 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,7 +52,12 @@ class PgVectorStoreServiceTest {
         service.upsert(List.of(embedded));
 
         verify(vectorStore).add(captor.capture());
-        assertThat(captor.getValue().get(0).getId()).isEqualTo("chunk-id-1");
+        Document doc = captor.getValue().get(0);
+        // chunkId is stored in metadata for retrieval; document ID is a deterministic UUID
+        assertThat(doc.getMetadata()).containsEntry("chunkId", "chunk-id-1");
+        String expectedId = UUID.nameUUIDFromBytes(
+                "chunk-id-1".getBytes(StandardCharsets.UTF_8)).toString();
+        assertThat(doc.getId()).isEqualTo(expectedId);
     }
 
     @Test
@@ -103,6 +110,68 @@ class PgVectorStoreServiceTest {
         // Should not throw
         service.deleteBySource("missing.pdf");
         verify(vectorStore, never()).delete(anyList());
+    }
+
+    @Test
+    void deleteBySource_chunksFound_callsDeleteWithDocumentIds() {
+        Document doc1 = Document.builder()
+                .id("doc-id-1")
+                .text("Chunk one")
+                .metadata(Map.of("filename", "report.pdf"))
+                .build();
+        Document doc2 = Document.builder()
+                .id("doc-id-2")
+                .text("Chunk two")
+                .metadata(Map.of("filename", "report.pdf"))
+                .build();
+        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(doc1, doc2));
+        ArgumentCaptor<List<String>> idsCaptor = ArgumentCaptor.captor();
+
+        service.deleteBySource("report.pdf");
+
+        verify(vectorStore).delete(idsCaptor.capture());
+        assertThat(idsCaptor.getValue()).containsExactlyInAnyOrder("doc-id-1", "doc-id-2");
+    }
+
+    @Test
+    void search_documentWithNonNumericChunkIndex_defaultsToZero() {
+        Document doc = Document.builder()
+                .id("chunk-bad-index")
+                .text("Some content")
+                .metadata(Map.of(
+                        "chunkId", "chunk-bad-index",
+                        "chunkIndex", "not-a-number",
+                        "tokenCount", "10",
+                        "filename", "file.pdf"
+                ))
+                .score(0.80)
+                .build();
+        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(doc));
+
+        List<ScoredChunk> result = service.search("query", 5, 0.75);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).chunk().chunkIndex()).isZero();
+    }
+
+    @Test
+    void search_documentWithNullTokenCount_defaultsToZero() {
+        Document doc = Document.builder()
+                .id("chunk-null-tokens")
+                .text("Some content")
+                .metadata(Map.of(
+                        "chunkId", "chunk-null-tokens",
+                        "chunkIndex", "2",
+                        "filename", "file.pdf"
+                ))
+                .score(0.85)
+                .build();
+        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(doc));
+
+        List<ScoredChunk> result = service.search("query", 5, 0.75);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).chunk().tokenCount()).isZero();
     }
 
     // --- helpers ---

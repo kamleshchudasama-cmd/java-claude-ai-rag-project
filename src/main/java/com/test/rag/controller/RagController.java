@@ -2,6 +2,7 @@ package com.test.rag.controller;
 
 import com.test.rag.model.BuiltContext;
 import com.test.rag.model.DocumentChunk;
+import com.test.rag.model.DocumentSummary;
 import com.test.rag.model.EmbeddedChunk;
 import com.test.rag.model.ParsedDocument;
 import com.test.rag.model.RagResponse;
@@ -14,6 +15,9 @@ import com.test.rag.service.loader.DocumentLoaderService;
 import com.test.rag.service.retrieval.RetrievalService;
 import com.test.rag.service.vectorstore.VectorStoreService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -67,6 +71,19 @@ public class RagController {
         List<ScoredChunk> chunks = retrievalService.retrieve(question);
         BuiltContext context = contextBuilderService.build(question, chunks);
         return generationService.generate(context);
+    }
+
+    @GetMapping("/documents")
+    public ResponseEntity<List<DocumentSummary>> listDocuments() {
+        return ResponseEntity.ok(vectorStoreService.listDocuments());
+    }
+
+    @DeleteMapping("/documents/{id}")
+    public ResponseEntity<Void> deleteDocument(@PathVariable String id) {
+        boolean deleted = vectorStoreService.deleteBySource(id);
+        return deleted
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 }
 

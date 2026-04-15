@@ -15,13 +15,14 @@ public class RagProperties {
     // --- Chunking ---
     private int chunkSize = 512;
     private int chunkOverlap = 50;
-    private int minChunkSize = 100;
+    private int minChunkSize = 50;
 
     // --- Embedding ---
     private int embeddingBatchSize = 32;
     private long embeddingRequestDelayMs = 0;
 
     // --- Retrieval ---
+    private boolean retrievalEnabled = true;
     private int topK = 5;
     private BigDecimal minSimilarity = new BigDecimal("0.75");
     private boolean useMmr = false;
@@ -50,6 +51,9 @@ public class RagProperties {
 
     public long getEmbeddingRequestDelayMs() { return embeddingRequestDelayMs; }
     public void setEmbeddingRequestDelayMs(long embeddingRequestDelayMs) { this.embeddingRequestDelayMs = embeddingRequestDelayMs; }
+
+    public boolean isRetrievalEnabled() { return retrievalEnabled; }
+    public void setRetrievalEnabled(boolean retrievalEnabled) { this.retrievalEnabled = retrievalEnabled; }
 
     public int getTopK() { return topK; }
     public void setTopK(int topK) { this.topK = topK; }

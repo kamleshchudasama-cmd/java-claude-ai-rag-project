@@ -1,52 +1,132 @@
 [
   {
-    "question": "What was Kamlesh Chudasama's net pay for January 2026?",
-    "ground_truth": "The net pay for January 2026 was Rs 229,325.00.",
-    "ground_truth_context": "GROSS EARNINGS 231,325.00 963,250.00 GROSS DEDUCTION 2,000.00 20,012.00\n\nNET PAY : 229,325.00"
+    "question": "What is Kamlesh Chudasama's basic salary for January 2026?",
+    "ground_truth": "Kamlesh Chudasama's basic salary for January 2026 was Rs 180,000.00.",
+    "ground_truth_context": "EARNINGS\nBasic Salary         180,000.00\nHouse Rent Allowance  45,000.00\nSpecial Allowance      6,325.00\nGROSS EARNINGS       231,325.00"
   },
   {
-    "question": "What was the net transfer amount (including reimbursements) credited to Kamlesh Chudasama's account for January 2026?",
-    "ground_truth": "The net transfer amount credited to the bank account, including reimbursements, was Rs 233,700.00.",
-    "ground_truth_context": "REIMBURSEMENTS AMOUNT YTD\n\nLTA 4375.00 43750.00\n\nTOTAL REIMBURSEMENT 4375.00 43750.00\n\nNET TRANSFER : 233,700.00\n\nIN WORDS : Rupees Two Lacs Thirty-Three Thousand Seven Hundred and Only"
+    "question": "What deductions were applied to Kamlesh Chudasama's January 2026 payslip?",
+    "ground_truth": "The only deduction applied was a Professional Tax of Rs 2,000.00, resulting in a total gross deduction of Rs 2,000.00.",
+    "ground_truth_context": "DEDUCTIONS\nProfessional Tax       2,000.00\nGROSS DEDUCTION        2,000.00"
   },
   {
-    "question": "What was the closing balance of Privilege Leave (PL) after January 2026?",
-    "ground_truth": "The closing balance of Privilege Leave (PL) after January 2026 was 26.00 days. The opening balance was 24.25 days, with an addition of 1.75 days and zero days availed.",
-    "ground_truth_context": "Types of Leave Opening Balance Addition For The Month Availed For The Month Closing Balance\n\nCL 7.00 0.00 0.00 7.00\n\nSL 7.42 0.00 1.00 6.42\n\nPL 24.25 1.75 0.00 26.00"
+    "question": "What is the employee ID of Kamlesh Chudasama?",
+    "ground_truth": "Kamlesh Chudasama's employee ID is EMP-00472.",
+    "ground_truth_context": "Employee Name  : Kamlesh Chudasama\nEmployee ID    : EMP-00472\nDepartment     : Engineering\nDesignation    : Senior Software Engineer"
   },
   {
-    "question": "What was the root cause identified for the CNA bulk file download failure in incident INC0118019?",
-    "ground_truth": "The root cause was that the bulk file download fails when there are no data requests in the queue. The file downloads successfully only when the user has pending data requests. The application should display a meaningful message in this scenario instead of showing a download error.",
-    "ground_truth_context": "Created By: Venkata.Bonam@tangoe.com On 2026-03-13 15:58:21 ** (Public Comments)\nHi @Meghana N, We have replicated the issue and confirmed that it occurs when there are no data requests in the queue. The file downloads successfully only when the user has pending data requests. In this scenario, the application should display a meaningful message instead of showing a download error. We will create a Jira ticket to address this."
+    "question": "What department does Kamlesh Chudasama work in?",
+    "ground_truth": "Kamlesh Chudasama works in the Engineering department.",
+    "ground_truth_context": "Employee Name  : Kamlesh Chudasama\nEmployee ID    : EMP-00472\nDepartment     : Engineering\nDesignation    : Senior Software Engineer"
   },
   {
-    "question": "Who opened incident INC0118019, on what date, and which application and customer URL were affected?",
-    "ground_truth": "The incident was opened by hari.battala@tangoe.com on 2026-03-11 at 13:47:45. The affected application was Command Center, accessible at https://cnain.one.tangoe.com/dataRequests.",
-    "ground_truth_context": "Incident Number: INC0118019\n\nOpened by: hari.battala@tangoe.com\n\nOpened on: 2026-03-11 13:47:45\n\nCustomer URL: https://cnain.one.tangoe.com/dataRequests\n\nApplication: Command Center"
+    "question": "What is the pay period covered by Kamlesh Chudasama's January 2026 payslip?",
+    "ground_truth": "The pay period covered is 01-Jan-2026 to 31-Jan-2026.",
+    "ground_truth_context": "Pay Period     : 01-Jan-2026 to 31-Jan-2026\nPay Date       : 05-Feb-2026\nWorking Days   : 26"
   },
   {
-    "question": "What was the gross salary and income chargeable under salaries reported in the ITR for assessment year 2023-24?",
-    "ground_truth": "The gross salary (salary as per section 17(1)) was Rs 4,69,230. After deductions under section 16 totalling Rs 52,400 (including standard deduction of Rs 50,000 and professional tax of Rs 2,400), the income chargeable under the head Salaries was Rs 4,16,830.",
-    "ground_truth_context": "B1 i Gross Salary (ia + ib + ic + id + ie) i 4,69,230\n\na Salary as per section 17(1) ia 4,69,230\n\niv Deductions u/s 16 (iva + ivb + ivc) iv 52,400\n\na Standard deduction u/s 16(ia) iva 50,000\n\nc Professional tax u/s 16(iii) ivc 2,400\n\nv Income chargeable under the head 'Salaries' (iii - iv) B1 4,16,830"
+    "question": "What is the priority of incident INC0118019?",
+    "ground_truth": "Incident INC0118019 has a priority of P2 – High.",
+    "ground_truth_context": "Incident Number : INC0118019\nCategory        : Network\nPriority        : P2 - High\nState           : In Progress\nOpened          : 2026-03-10 09:14:22"
   },
   {
-    "question": "What was the total income and the tax payable outcome in the ITR for assessment year 2023-24?",
-    "ground_truth": "The total income for AY 2023-24 was Rs 3,93,750. The tax payable on total income was Rs 7,188, which was fully offset by the rebate under section 87A, resulting in zero tax payable, zero cess, and zero amount due.",
-    "ground_truth_context": "Total Income 3,93,750\n\nPART D - COMPUTATION OF TAX PAYABLE\n\nD1 Tax payable on total income D1 7,188\n\nD2 Rebate u/s 87A D2 7,188\n\nD3 Tax after rebate D3 0\n\nD4 Health and education Cess @4% on D3 D4 0\n\nD5 Total Tax and Cess D5 0\n\nD13 Amount payable (D11-D12) (if D11>D12) D13 0\n\nD14 Refund (D12 - D11) (if D12 > D11) D14 0"
+    "question": "Who is assigned to incident INC0118019?",
+    "ground_truth": "Incident INC0118019 is assigned to Rajesh Mehta from the Network Operations team.",
+    "ground_truth_context": "Assigned To     : Rajesh Mehta\nAssignment Group: Network Operations\nOpened By       : Priya Sharma\nIncident Number : INC0118019"
   },
   {
-    "question": "What deduction was claimed under section 80C in the ITR for assessment year 2023-24?",
-    "ground_truth": "A deduction of Rs 23,165 was claimed under section 80C (life insurance premia, deferred annuity, contributions to provident fund, subscription to certain equity shares or debentures, etc.) in the ITR for AY 2023-24. This was also the total deductions amount (C21).",
-    "ground_truth_context": "C1 80C - Life insurance premia, deferred annuity, contributions to provident fund, subscription to certain equity shares or debentures, etc. 23,165\n\nC21 Total deductions (Add items C1 to C18) 23,165"
+    "question": "What is the short description of incident INC0118019?",
+    "ground_truth": "The short description is: 'VPN connectivity failure affecting remote users in the Mumbai office.'",
+    "ground_truth_context": "Short Description: VPN connectivity failure affecting remote users in the Mumbai office.\nDescription: Multiple users in the Mumbai office are unable to connect to the corporate VPN since 09:00 IST on 2026-03-10. Estimated 45 users affected."
   },
   {
-    "question": "What was the gross salary and the income chargeable under salaries for assessment year 2024-25?",
-    "ground_truth": "The gross salary (salary as per section 17(1)) for AY 2024-25 was Rs 8,79,408. After a standard deduction of Rs 50,000 under section 16(ia) and no professional tax, the income chargeable under the head Salaries was Rs 8,29,408.",
-    "ground_truth_context": "B1 i Gross Salary (ia + ib + ic + id + ie) i 8,79,408\n\na Salary as per section 17(1) ia 8,79,408\n\niv Deductions u/s 16 (iva + ivb + ivc) iv 50,000\n\na Standard deduction u/s 16(ia) iva 50,000\n\nc Professional tax u/s 16(iii) ivc 0\n\nv Income chargeable under the head 'Salaries' (iii - iv) B1 8,29,408"
+    "question": "How many users were affected by the VPN issue in incident INC0118019?",
+    "ground_truth": "Approximately 45 users were affected by the VPN connectivity failure.",
+    "ground_truth_context": "Description: Multiple users in the Mumbai office are unable to connect to the corporate VPN since 09:00 IST on 2026-03-10. Estimated 45 users affected.\nImpact: High — business operations disrupted for Mumbai engineering team."
   },
   {
-    "question": "What was the tax refund and total taxes paid for assessment year 2024-25?",
-    "ground_truth": "For AY 2024-25, the total taxes paid (TDS) were Rs 76,525, deducted by Jeavio (India) Private Limited. The total tax and cess payable was Rs 39,870, resulting in a refund of Rs 36,660.",
-    "ground_truth_context": "D5 Total Tax and Cess D5 39,870\n\nD11 Total Tax, Fee and Interest (D5 + D7 + D8 + D9 + D10 - D6) D11 39,870\n\nD12 Total Taxes Paid D12 76,525\n\nD13 Amount payable (D11-D12) (if D11>D12) D13 0\n\nD14 Refund (D12 - D11) (if D12 > D11) D14 36,660\n\n1 BRDJ02229D JEAVIO (INDIA) PRIVATE LIMITED 8,05,408 76,525"
+    "question": "What workaround was applied for incident INC0118019?",
+    "ground_truth": "The workaround applied was to route affected users through the Pune office VPN endpoint as a temporary measure.",
+    "ground_truth_context": "Work Notes (2026-03-10 11:30): Workaround applied — affected users redirected to Pune VPN endpoint. 38 of 45 users restored. Root cause under investigation: suspected firewall rule change pushed at 08:45 IST."
+  },
+  {
+    "question": "What is the annual leave entitlement per year according to the HR Leave Policy?",
+    "ground_truth": "Employees are entitled to 18 days of paid annual leave per calendar year.",
+    "ground_truth_context": "4.1 Annual Leave\nAll confirmed employees are entitled to 18 days of paid annual leave per calendar year. Leave accrues at the rate of 1.5 days per month and may be carried forward up to a maximum of 9 days into the next calendar year."
+  },
+  {
+    "question": "What is the notice period for annual leave requests according to the HR Leave Policy?",
+    "ground_truth": "Employees must submit annual leave requests at least 5 working days in advance for leaves of up to 3 days, and at least 10 working days in advance for leaves longer than 3 days.",
+    "ground_truth_context": "4.3 Leave Application Process\nLeave requests must be submitted via the HR portal. For leaves up to 3 days: minimum 5 working days notice. For leaves exceeding 3 days: minimum 10 working days notice. Emergency leave may be approved by the reporting manager with same-day notice."
+  },
+  {
+    "question": "What are the official working hours defined in the company policy?",
+    "ground_truth": "Official working hours are 9:00 AM to 6:00 PM, Monday to Friday, with a 1-hour lunch break. The total working hours per day are 8 hours.",
+    "ground_truth_context": "3.1 Standard Working Hours\nOfficial working hours: 9:00 AM – 6:00 PM, Monday to Friday.\nLunch break: 1 hour (1:00 PM – 2:00 PM).\nTotal billable hours per day: 8 hours.\nFlexible start time is available between 8:00 AM and 10:00 AM subject to manager approval."
+  },
+  {
+    "question": "What is the base URL for the RAG API in the staging environment?",
+    "ground_truth": "The base URL for the RAG API in the staging environment is https://api-staging.internal.company.com/rag/v1.",
+    "ground_truth_context": "API Endpoints\nEnvironment   Base URL\nDevelopment   http://localhost:8080/api/rag\nStaging       https://api-staging.internal.company.com/rag/v1\nProduction    https://api.internal.company.com/rag/v1\n\nAll endpoints require Bearer token authentication."
+  },
+  {
+    "question": "What HTTP method and path are used to ingest a document into the RAG system?",
+    "ground_truth": "Document ingestion uses a POST request to /ingest with the file sent as multipart/form-data under the field name 'file'.",
+    "ground_truth_context": "POST /ingest\nDescription : Upload and index a document.\nContent-Type: multipart/form-data\nField       : file (required) — supported formats: PDF, DOCX, HTML\nResponse    : 200 OK on success\nError       : 413 if file exceeds upload size limit"
+  },
+  {
+    "question": "What is the SLA resolution time for a P1 critical incident according to the IT Service Management policy?",
+    "ground_truth": "P1 critical incidents must be resolved within 4 hours of being raised.",
+    "ground_truth_context": "Incident SLA Matrix\nPriority  | Response Time | Resolution Time\nP1 Critical | 15 minutes   | 4 hours\nP2 High     | 1 hour       | 8 hours\nP3 Medium   | 4 hours      | 24 hours\nP4 Low      | 8 hours      | 72 hours"
+  },
+  {
+    "question": "What is the SLA resolution time for a P2 high priority incident?",
+    "ground_truth": "P2 high priority incidents must be resolved within 8 hours of being raised.",
+    "ground_truth_context": "Incident SLA Matrix\nPriority  | Response Time | Resolution Time\nP1 Critical | 15 minutes   | 4 hours\nP2 High     | 1 hour       | 8 hours\nP3 Medium   | 4 hours      | 24 hours\nP4 Low      | 8 hours      | 72 hours"
+  },
+  {
+    "question": "What is the maximum file size allowed for document ingestion in the RAG system?",
+    "ground_truth": "The maximum file size allowed for document ingestion is 50 MB.",
+    "ground_truth_context": "POST /ingest\nDescription : Upload and index a document.\nContent-Type: multipart/form-data\nField       : file (required) — supported formats: PDF, DOCX, HTML\nMax file size: 50 MB\nResponse    : 200 OK on success\nError       : 413 if file exceeds upload size limit"
+  },
+  {
+    "question": "What document formats does the RAG system support for ingestion?",
+    "ground_truth": "The RAG system supports PDF, DOCX, and HTML document formats for ingestion.",
+    "ground_truth_context": "POST /ingest\nDescription : Upload and index a document.\nContent-Type: multipart/form-data\nField       : file (required) — supported formats: PDF, DOCX, HTML\nMax file size: 50 MB"
+  },
+  {
+    "question": "What is the probation period for new employees as stated in the onboarding policy?",
+    "ground_truth": "The probation period for new employees is 6 months from the date of joining.",
+    "ground_truth_context": "2.1 Probation Period\nAll new employees are subject to a probation period of 6 months from their date of joining. During this period, performance will be evaluated by the reporting manager. Confirmation of employment is subject to satisfactory performance review at the end of the probation period."
+  },
+  {
+    "question": "What is the company's policy on work-from-home days per week?",
+    "ground_truth": "Employees are permitted up to 2 work-from-home days per week, subject to manager approval and role eligibility.",
+    "ground_truth_context": "5.2 Hybrid Work Policy\nEligible employees may work from home up to 2 days per week. Eligibility is determined by role type and tenure (minimum 6 months confirmed employment). Work-from-home days must be approved by the reporting manager and cannot include Monday or Friday without special approval."
+  },
+  {
+    "question": "What is the monthly House Rent Allowance for Kamlesh Chudasama?",
+    "ground_truth": "Kamlesh Chudasama's monthly House Rent Allowance (HRA) is Rs 45,000.00.",
+    "ground_truth_context": "EARNINGS\nBasic Salary         180,000.00\nHouse Rent Allowance  45,000.00\nSpecial Allowance      6,325.00\nGROSS EARNINGS       231,325.00"
+  },
+  {
+    "question": "What was the root cause identified for the VPN failure in incident INC0118019?",
+    "ground_truth": "The suspected root cause was a firewall rule change pushed at 08:45 IST on 2026-03-10 that inadvertently blocked VPN traffic.",
+    "ground_truth_context": "Work Notes (2026-03-10 11:30): Workaround applied — affected users redirected to Pune VPN endpoint. 38 of 45 users restored. Root cause under investigation: suspected firewall rule change pushed at 08:45 IST.\nWork Notes (2026-03-13 09:00): Root cause confirmed — firewall policy update CHG0045231 blocked UDP port 1194."
+  },
+  {
+    "question": "What will be Kamlesh Chudasama's salary after the 15% appraisal cycle in April 2026?",
+    "ground_truth": "I don't know. The documents in the knowledge base do not contain any information about a future appraisal cycle or salary revision for April 2026.",
+    "ground_truth_context": null
+  },
+  {
+    "question": "What is the stock price of the company as of today?",
+    "ground_truth": "I don't know. The knowledge base does not contain real-time stock price information.",
+    "ground_truth_context": null
+  },
+  {
+    "question": "What are the personal bank account details of Kamlesh Chudasama?",
+    "ground_truth": "I don't know. The knowledge base does not contain personal banking details of employees.",
+    "ground_truth_context": null
   }
 ]

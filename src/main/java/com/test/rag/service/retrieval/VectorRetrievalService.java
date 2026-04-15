@@ -24,6 +24,11 @@ public class VectorRetrievalService implements RetrievalService {
 
     @Override
     public List<ScoredChunk> retrieve(String userQuery) {
+        if (!props.isRetrievalEnabled()) {
+            log.info("Retrieval disabled — skipping vector search for query='{}'", userQuery);
+            return List.of();
+        }
+
         int topK = props.getTopK();
         double threshold = props.getMinSimilarity().doubleValue();
 

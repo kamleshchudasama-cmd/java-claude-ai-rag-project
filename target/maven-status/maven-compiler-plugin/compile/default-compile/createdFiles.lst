@@ -1,12 +1,10 @@
 com\test\rag\service\vectorstore\VectorStoreService.class
 com\test\rag\service\context\PromptContextBuilderService.class
-com\test\rag\service\queryembedding\AnthropicQueryEmbeddingService.class
 com\test\rag\RagApplication.class
 com\test\rag\service\loader\DocumentLoaderService.class
 com\test\rag\model\ScoredChunk.class
 com\test\rag\model\Citation.class
 com\test\rag\model\DocumentChunk.class
-com\test\rag\service\embedding\AnthropicEmbeddingService.class
 com\test\rag\service\embedding\EmbeddingService.class
 com\test\rag\exception\ChunkingException.class
 com\test\rag\model\EmbeddedChunk.class
@@ -14,7 +12,6 @@ com\test\rag\service\retrieval\RetrievalService.class
 com\test\rag\service\retrieval\VectorRetrievalService.class
 com\test\rag\config\SpringAiConfig.class
 com\test\rag\controller\RagController.class
-com\test\rag\service\generation\GeminiGenerationService.class
 com\test\rag\exception\DocumentParseException.class
 com\test\rag\service\chunking\RecursiveChunkingService.class
 com\test\rag\service\generation\GenerationService.class

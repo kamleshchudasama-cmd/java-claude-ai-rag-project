@@ -2,7 +2,7 @@
 **Spec:** `docs/specs/generation-service.md`
 
 ## Responsibility
-Call Gemini-2.5-flash via Spring AI `ChatClient` using the grounded prompt from
+Call gpt-4o-mini via Spring AI `ChatClient` using the grounded prompt from
 `ContextBuilderService`, then parse the model reply into a `RagResponse` with
 inline citations mapped back to source documents.
 
@@ -11,7 +11,7 @@ inline citations mapped back to source documents.
     Out     RagResponse                              { String answer, List<Citation> citations, int totalTokens }
 
 ## Rules
-- **Never** call the Gemini API directly — always use the injected `ChatClient` bean.
+- **Never** call the OpenAI API directly — always use the injected `ChatClient` bean.
 - Read generation params exclusively from `RagProperties`:
   - `ragProperties.getTemperature()`     default 0.2
   - `ragProperties.getMaxOutputTokens()` default 2048
