@@ -21,8 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(RagController.class)
 class WebConfigTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+    private final MockMvc mockMvc;
 
     @MockBean private DocumentLoaderService documentLoaderService;
     @MockBean private ChunkingService chunkingService;
@@ -32,6 +31,11 @@ class WebConfigTest {
     @MockBean private ContextBuilderService contextBuilderService;
     @MockBean private GenerationService generationService;
 
+    @Autowired
+    WebConfigTest(MockMvc mockMvc) {
+        this.mockMvc = mockMvc;
+    }
+
     @Test
     void corsAllowsAngularDevOrigin() throws Exception {
         mockMvc.perform(options("/api/rag/documents")
@@ -39,5 +43,13 @@ class WebConfigTest {
                         .header("Access-Control-Request-Method", "GET"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:4200"));
+    }
+
+    @Test
+    void corsRejectsUnknownOrigin() throws Exception {
+        mockMvc.perform(options("/api/rag/documents")
+                        .header("Origin", "http://evil.com")
+                        .header("Access-Control-Request-Method", "GET"))
+                .andExpect(header().doesNotExist("Access-Control-Allow-Origin"));
     }
 }
