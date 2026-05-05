@@ -45,7 +45,7 @@ Empty state (no messages): centered muted text — *"Ask a question to get start
 
 ### Interactions
 
-- **Send:** button click or Enter key (Shift+Enter inserts newline).
+- **Send:** button click or Enter key. Single-line `<input>` — no multiline support.
 - **Loading state (`isLoading = true`):** Send button disabled and shows `mat-spinner` (diameter 20); input field disabled. No message placeholder in the list.
 - **On success:** `ChatService.addAssistantMessage(response)` → scroll to bottom → `isLoading = false`.
 - **On error:** `ChatService.addErrorMessage()` → `isLoading = false`.
@@ -61,7 +61,7 @@ inputText = '';
 
 ### Dependencies
 
-`ChatService`, `RagApiService`, `CitationCardComponent`, Angular Material: `MatFormFieldModule`, `MatInputModule`, `MatIconButton`, `MatProgressSpinnerModule`.
+`ChatService`, `RagApiService`, `CitationCardComponent`, Angular Material: `MatFormFieldModule`, `MatInputModule`, `MatButtonModule`, `MatIconModule`, `MatProgressSpinnerModule`.
 
 ---
 
