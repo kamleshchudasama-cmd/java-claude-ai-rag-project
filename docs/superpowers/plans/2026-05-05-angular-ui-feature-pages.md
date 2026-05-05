@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Implement the three missing standalone Angular 18 feature components — `QueryComponent`, `IngestComponent`, and `DocumentsComponent` — that complete the RAG system's Angular UI.
+**Goal:** Implement the three missing Angular 18 feature components — `QueryComponent`, `IngestComponent`, and `DocumentsComponent` — that complete the RAG system's Angular UI.
 
-**Architecture:** Each component is self-contained (Approach A): inline template, inline styles, constructor injection, all state as plain component fields. Services (`ChatService`, `DocumentsService`, `RagApiService`) are already implemented and injected; components only wire them to the DOM. No sub-components are created beyond what already exists (`CitationCardComponent`, `ConfirmDialogComponent`).
+**Architecture:** Each component is self-contained with **separate files**: `component.ts` (class), `component.html` (template), `component.scss` (styles). Standalone components, constructor injection via `inject()`, Angular Material 18. Services (`ChatService`, `DocumentsService`, `RagApiService`) are already implemented; components only wire them to the DOM.
 
 **Tech Stack:** Angular 18, Angular Material 18, Jasmine + Karma, `@angular/forms` (FormsModule for ngModel), RxJS `of`/`throwError`/`Subject` in tests.
 
@@ -14,11 +14,17 @@
 
 | Action | Path | Responsibility |
 |---|---|---|
-| CREATE | `angular-ui/src/app/features/query/query.component.ts` | Chat UI — message list, input bar, send logic |
+| CREATE | `angular-ui/src/app/features/query/query.component.ts` | Component class — inject services, send logic |
+| CREATE | `angular-ui/src/app/features/query/query.component.html` | Chat template — message list, input bar |
+| CREATE | `angular-ui/src/app/features/query/query.component.scss` | Chat layout styles |
 | CREATE | `angular-ui/src/app/features/query/query.component.spec.ts` | QueryComponent tests |
-| CREATE | `angular-ui/src/app/features/ingest/ingest.component.ts` | File upload — drop zone, preview card, state machine |
+| CREATE | `angular-ui/src/app/features/ingest/ingest.component.ts` | Component class — upload state machine |
+| CREATE | `angular-ui/src/app/features/ingest/ingest.component.html` | Drop zone + preview card template |
+| CREATE | `angular-ui/src/app/features/ingest/ingest.component.scss` | Upload page styles |
 | CREATE | `angular-ui/src/app/features/ingest/ingest.component.spec.ts` | IngestComponent tests |
-| CREATE | `angular-ui/src/app/features/documents/documents.component.ts` | Document card list with delete flow |
+| CREATE | `angular-ui/src/app/features/documents/documents.component.ts` | Component class — load, delete flow |
+| CREATE | `angular-ui/src/app/features/documents/documents.component.html` | Card list template |
+| CREATE | `angular-ui/src/app/features/documents/documents.component.scss` | Documents page styles |
 | CREATE | `angular-ui/src/app/features/documents/documents.component.spec.ts` | DocumentsComponent tests |
 
 No existing files need modification — routes are already wired in `app.routes.ts`.
@@ -29,6 +35,8 @@ No existing files need modification — routes are already wired in `app.routes.
 
 **Files:**
 - Create: `angular-ui/src/app/features/query/query.component.ts`
+- Create: `angular-ui/src/app/features/query/query.component.html`
+- Create: `angular-ui/src/app/features/query/query.component.scss`
 - Create: `angular-ui/src/app/features/query/query.component.spec.ts`
 
 - [ ] **Step 1: Write the failing spec**
@@ -148,9 +156,7 @@ cd angular-ui && ng test --watch=false --browsers=ChromeHeadless 2>&1 | tail -20
 
 Expected: compilation error — `Cannot find module './query.component'`
 
-- [ ] **Step 3: Implement QueryComponent**
-
-Create `angular-ui/src/app/features/query/query.component.ts`:
+- [ ] **Step 3: Create query.component.ts**
 
 ```typescript
 import { Component, ElementRef, ViewChild, inject } from '@angular/core';
@@ -176,63 +182,8 @@ import { CitationCardComponent } from '../../shared/citation-card/citation-card.
     MatProgressSpinnerModule,
     CitationCardComponent
   ],
-  template: `
-    <div class="chat-container">
-      <div class="message-list" #messageList>
-        @if (chatService.messages().length === 0) {
-          <p class="empty-state">Ask a question to get started</p>
-        }
-        @for (msg of chatService.messages(); track $index) {
-          @if (msg.role === 'user') {
-            <div class="message-row user">
-              <div class="bubble user-bubble">{{ msg.text }}</div>
-            </div>
-          } @else {
-            <div class="message-row assistant">
-              <div class="assistant-card">
-                <p class="answer-text">{{ msg.text }}</p>
-                @for (citation of (msg.citations ?? []); track citation.ref) {
-                  <app-citation-card [citation]="citation" />
-                }
-              </div>
-            </div>
-          }
-        }
-      </div>
-      <div class="input-bar">
-        <mat-form-field appearance="outline" class="input-field">
-          <input matInput
-            [(ngModel)]="inputText"
-            placeholder="Ask a question…"
-            [disabled]="isLoading"
-            (keydown.enter)="send()" />
-        </mat-form-field>
-        <button mat-icon-button color="primary"
-          [disabled]="isLoading || !inputText.trim()"
-          (click)="send()">
-          @if (isLoading) {
-            <mat-spinner diameter="20" />
-          } @else {
-            <mat-icon>send</mat-icon>
-          }
-        </button>
-      </div>
-    </div>
-  `,
-  styles: [`
-    .chat-container { display: flex; flex-direction: column; height: 100%; }
-    .message-list { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-    .empty-state { text-align: center; color: rgba(0,0,0,0.4); margin-top: 80px; }
-    .message-row { display: flex; }
-    .message-row.user { justify-content: flex-end; }
-    .message-row.assistant { justify-content: flex-start; }
-    .bubble { padding: 8px 14px; max-width: 70%; }
-    .user-bubble { background: #3f51b5; color: #fff; border-radius: 18px 18px 2px 18px; }
-    .assistant-card { background: #fff; border: 1px solid rgba(0,0,0,0.12); border-radius: 2px 12px 12px 12px; padding: 12px; max-width: 80%; }
-    .answer-text { margin: 0 0 8px; }
-    .input-bar { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-top: 1px solid rgba(0,0,0,0.12); }
-    .input-field { flex: 1; }
-  `]
+  templateUrl: './query.component.html',
+  styleUrl: './query.component.scss'
 })
 export class QueryComponent {
   protected chatService = inject(ChatService);
@@ -269,7 +220,120 @@ export class QueryComponent {
 }
 ```
 
-- [ ] **Step 4: Run the spec and confirm all 8 tests pass**
+- [ ] **Step 4: Create query.component.html**
+
+```html
+<div class="chat-container">
+  <div class="message-list" #messageList>
+    @if (chatService.messages().length === 0) {
+      <p class="empty-state">Ask a question to get started</p>
+    }
+    @for (msg of chatService.messages(); track $index) {
+      @if (msg.role === 'user') {
+        <div class="message-row user">
+          <div class="bubble user-bubble">{{ msg.text }}</div>
+        </div>
+      } @else {
+        <div class="message-row assistant">
+          <div class="assistant-card">
+            <p class="answer-text">{{ msg.text }}</p>
+            @for (citation of (msg.citations ?? []); track citation.ref) {
+              <app-citation-card [citation]="citation" />
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+  <div class="input-bar">
+    <mat-form-field appearance="outline" class="input-field">
+      <input matInput
+        [(ngModel)]="inputText"
+        placeholder="Ask a question…"
+        [disabled]="isLoading"
+        (keydown.enter)="send()" />
+    </mat-form-field>
+    <button mat-icon-button color="primary"
+      [disabled]="isLoading || !inputText.trim()"
+      (click)="send()">
+      @if (isLoading) {
+        <mat-spinner diameter="20" />
+      } @else {
+        <mat-icon>send</mat-icon>
+      }
+    </button>
+  </div>
+</div>
+```
+
+- [ ] **Step 5: Create query.component.scss**
+
+```scss
+.chat-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.message-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.empty-state {
+  text-align: center;
+  color: rgba(0, 0, 0, 0.4);
+  margin-top: 80px;
+}
+
+.message-row {
+  display: flex;
+
+  &.user { justify-content: flex-end; }
+  &.assistant { justify-content: flex-start; }
+}
+
+.bubble {
+  padding: 8px 14px;
+  max-width: 70%;
+}
+
+.user-bubble {
+  background: #3f51b5;
+  color: #fff;
+  border-radius: 18px 18px 2px 18px;
+}
+
+.assistant-card {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 2px 12px 12px 12px;
+  padding: 12px;
+  max-width: 80%;
+}
+
+.answer-text {
+  margin: 0 0 8px;
+}
+
+.input-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.input-field {
+  flex: 1;
+}
+```
+
+- [ ] **Step 6: Run the spec and confirm all 8 tests pass**
 
 ```bash
 cd angular-ui && ng test --watch=false --browsers=ChromeHeadless 2>&1 | tail -30
@@ -277,10 +341,14 @@ cd angular-ui && ng test --watch=false --browsers=ChromeHeadless 2>&1 | tail -30
 
 Expected: `QueryComponent: 8 specs, 0 failures`
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-cd angular-ui && cd .. && git add angular-ui/src/app/features/query/query.component.ts angular-ui/src/app/features/query/query.component.spec.ts && git commit -m "feat(angular-ui): add QueryComponent with inline-citation chat layout"
+git add angular-ui/src/app/features/query/query.component.ts \
+        angular-ui/src/app/features/query/query.component.html \
+        angular-ui/src/app/features/query/query.component.scss \
+        angular-ui/src/app/features/query/query.component.spec.ts && \
+git commit -m "feat(angular-ui): add QueryComponent with inline-citation chat layout"
 ```
 
 ---
@@ -289,6 +357,8 @@ cd angular-ui && cd .. && git add angular-ui/src/app/features/query/query.compon
 
 **Files:**
 - Create: `angular-ui/src/app/features/ingest/ingest.component.ts`
+- Create: `angular-ui/src/app/features/ingest/ingest.component.html`
+- Create: `angular-ui/src/app/features/ingest/ingest.component.scss`
 - Create: `angular-ui/src/app/features/ingest/ingest.component.spec.ts`
 
 - [ ] **Step 1: Write the failing spec**
@@ -396,7 +466,7 @@ describe('IngestComponent', () => {
 });
 ```
 
-- [ ] **Step 2: Run the spec to confirm it fails with a missing module error**
+- [ ] **Step 2: Run the spec to confirm it fails**
 
 ```bash
 cd angular-ui && ng test --watch=false --browsers=ChromeHeadless 2>&1 | tail -20
@@ -404,9 +474,7 @@ cd angular-ui && ng test --watch=false --browsers=ChromeHeadless 2>&1 | tail -20
 
 Expected: compilation error — `Cannot find module './ingest.component'`
 
-- [ ] **Step 3: Implement IngestComponent**
-
-Create `angular-ui/src/app/features/ingest/ingest.component.ts`:
+- [ ] **Step 3: Create ingest.component.ts**
 
 ```typescript
 import { Component, inject } from '@angular/core';
@@ -415,7 +483,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { RagApiService } from '../../core/rag-api.service';
 
-type UploadState = 'idle' | 'fileSelected' | 'uploading';
+export type UploadState = 'idle' | 'fileSelected' | 'uploading';
 
 const ALLOWED_TYPES = [
   'application/pdf',
@@ -428,81 +496,8 @@ const MAX_BYTES = 50 * 1024 * 1024;
   selector: 'app-ingest',
   standalone: true,
   imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule],
-  template: `
-    <div class="page-center">
-      <div class="upload-card">
-        <h2>Ingest Document</h2>
-
-        <div class="drop-zone"
-          [class.drag-over]="isDragOver"
-          [class.dimmed]="state !== 'idle'"
-          [class.no-pointer]="state === 'uploading'"
-          (dragover)="onDragOver($event)"
-          (dragleave)="onDragLeave()"
-          (drop)="onDrop($event)"
-          (click)="state === 'idle' && fileInput.click()">
-          <mat-icon class="drop-icon">upload_file</mat-icon>
-          <p class="drop-hint">
-            Drop file here or
-            <span class="browse-link" (click)="$event.stopPropagation(); fileInput.click()">browse</span>
-          </p>
-          <p class="drop-types">PDF · DOCX · HTML · up to 50 MB</p>
-        </div>
-
-        <input #fileInput type="file" accept=".pdf,.docx,.html" style="display:none"
-          (change)="onFileSelected($event)" />
-
-        @if (state === 'fileSelected' || state === 'uploading') {
-          <div class="preview-card">
-            <mat-icon class="file-icon">{{ iconFor(selectedFile!.type) }}</mat-icon>
-            <div class="file-info">
-              <div class="file-name">{{ selectedFile!.name }}</div>
-              <div class="file-meta">{{ formatBytes(selectedFile!.size) }} · {{ typeBadge(selectedFile!.type) }}</div>
-            </div>
-          </div>
-          <div class="actions">
-            <button mat-raised-button color="primary"
-              [disabled]="state === 'uploading'"
-              (click)="upload()">
-              @if (state === 'uploading') {
-                <mat-spinner diameter="20" />
-              } @else {
-                Upload
-              }
-            </button>
-            <button mat-button [disabled]="state === 'uploading'" (click)="clear()">Clear</button>
-          </div>
-        }
-
-        @if (errorMessage) {
-          <p class="status-error">{{ errorMessage }}</p>
-        }
-        @if (successMessage) {
-          <p class="status-success">{{ successMessage }}</p>
-        }
-      </div>
-    </div>
-  `,
-  styles: [`
-    .page-center { display: flex; justify-content: center; padding: 48px 16px; }
-    .upload-card { width: 100%; max-width: 560px; }
-    h2 { margin: 0 0 24px; }
-    .drop-zone { border: 2px dashed rgba(0,0,0,0.25); border-radius: 8px; padding: 40px; text-align: center; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
-    .drop-zone:hover, .drop-zone.drag-over { background: rgba(63,81,181,0.05); border-color: #3f51b5; }
-    .drop-zone.dimmed { opacity: 0.4; }
-    .drop-zone.no-pointer { pointer-events: none; }
-    .drop-icon { font-size: 40px; width: 40px; height: 40px; color: rgba(0,0,0,0.4); }
-    .drop-hint { margin: 8px 0 4px; }
-    .browse-link { color: #3f51b5; text-decoration: underline; cursor: pointer; }
-    .drop-types { font-size: 0.8rem; color: rgba(0,0,0,0.4); margin: 0; }
-    .preview-card { display: flex; align-items: center; gap: 12px; border: 1px solid rgba(0,0,0,0.12); border-radius: 6px; padding: 12px 16px; margin-top: 16px; }
-    .file-icon { color: #3f51b5; }
-    .file-name { font-weight: 500; }
-    .file-meta { font-size: 0.85rem; color: rgba(0,0,0,0.54); }
-    .actions { display: flex; gap: 8px; margin-top: 12px; }
-    .status-error { color: #f44336; margin-top: 8px; }
-    .status-success { color: #4caf50; margin-top: 8px; }
-  `]
+  templateUrl: './ingest.component.html',
+  styleUrl: './ingest.component.scss'
 })
 export class IngestComponent {
   private ragApi = inject(RagApiService);
@@ -597,18 +592,183 @@ export class IngestComponent {
 }
 ```
 
-- [ ] **Step 4: Run the spec and confirm all 9 tests pass**
+- [ ] **Step 4: Create ingest.component.html**
+
+```html
+<div class="page-center">
+  <div class="upload-card">
+    <h2>Ingest Document</h2>
+
+    <div class="drop-zone"
+      [class.drag-over]="isDragOver"
+      [class.dimmed]="state !== 'idle'"
+      [class.no-pointer]="state === 'uploading'"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave()"
+      (drop)="onDrop($event)"
+      (click)="state === 'idle' && fileInput.click()">
+      <mat-icon class="drop-icon">upload_file</mat-icon>
+      <p class="drop-hint">
+        Drop file here or
+        <span class="browse-link" (click)="$event.stopPropagation(); fileInput.click()">browse</span>
+      </p>
+      <p class="drop-types">PDF · DOCX · HTML · up to 50 MB</p>
+    </div>
+
+    <input #fileInput type="file" accept=".pdf,.docx,.html" class="hidden-input"
+      (change)="onFileSelected($event)" />
+
+    @if (state === 'fileSelected' || state === 'uploading') {
+      <div class="preview-card">
+        <mat-icon class="file-icon">{{ iconFor(selectedFile!.type) }}</mat-icon>
+        <div class="file-info">
+          <div class="file-name">{{ selectedFile!.name }}</div>
+          <div class="file-meta">{{ formatBytes(selectedFile!.size) }} · {{ typeBadge(selectedFile!.type) }}</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button mat-raised-button color="primary"
+          [disabled]="state === 'uploading'"
+          (click)="upload()">
+          @if (state === 'uploading') {
+            <mat-spinner diameter="20" />
+          } @else {
+            Upload
+          }
+        </button>
+        <button mat-button [disabled]="state === 'uploading'" (click)="clear()">Clear</button>
+      </div>
+    }
+
+    @if (errorMessage) {
+      <p class="status-error">{{ errorMessage }}</p>
+    }
+    @if (successMessage) {
+      <p class="status-success">{{ successMessage }}</p>
+    }
+  </div>
+</div>
+```
+
+- [ ] **Step 5: Create ingest.component.scss**
+
+```scss
+.page-center {
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px;
+}
+
+.upload-card {
+  width: 100%;
+  max-width: 560px;
+
+  h2 {
+    margin: 0 0 24px;
+  }
+}
+
+.drop-zone {
+  border: 2px dashed rgba(0, 0, 0, 0.25);
+  border-radius: 8px;
+  padding: 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+
+  &:hover,
+  &.drag-over {
+    background: rgba(63, 81, 181, 0.05);
+    border-color: #3f51b5;
+  }
+
+  &.dimmed { opacity: 0.4; }
+  &.no-pointer { pointer-events: none; }
+}
+
+.drop-icon {
+  font-size: 40px;
+  width: 40px;
+  height: 40px;
+  color: rgba(0, 0, 0, 0.4);
+}
+
+.drop-hint {
+  margin: 8px 0 4px;
+}
+
+.browse-link {
+  color: #3f51b5;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.drop-types {
+  font-size: 0.8rem;
+  color: rgba(0, 0, 0, 0.4);
+  margin: 0;
+}
+
+.hidden-input {
+  display: none;
+}
+
+.preview-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 12px 16px;
+  margin-top: 16px;
+}
+
+.file-icon {
+  color: #3f51b5;
+}
+
+.file-name {
+  font-weight: 500;
+}
+
+.file-meta {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.54);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.status-error {
+  color: #f44336;
+  margin-top: 8px;
+}
+
+.status-success {
+  color: #4caf50;
+  margin-top: 8px;
+}
+```
+
+- [ ] **Step 6: Run the spec and confirm all 9 tests pass**
 
 ```bash
 cd angular-ui && ng test --watch=false --browsers=ChromeHeadless 2>&1 | tail -30
 ```
 
-Expected: `IngestComponent: 9 specs, 0 failures` (and the QueryComponent suite still passes)
+Expected: `IngestComponent: 9 specs, 0 failures` (QueryComponent suite still passes)
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-cd angular-ui && cd .. && git add angular-ui/src/app/features/ingest/ingest.component.ts angular-ui/src/app/features/ingest/ingest.component.spec.ts && git commit -m "feat(angular-ui): add IngestComponent with drop-zone and file preview"
+git add angular-ui/src/app/features/ingest/ingest.component.ts \
+        angular-ui/src/app/features/ingest/ingest.component.html \
+        angular-ui/src/app/features/ingest/ingest.component.scss \
+        angular-ui/src/app/features/ingest/ingest.component.spec.ts && \
+git commit -m "feat(angular-ui): add IngestComponent with drop-zone and file preview"
 ```
 
 ---
@@ -617,6 +777,8 @@ cd angular-ui && cd .. && git add angular-ui/src/app/features/ingest/ingest.comp
 
 **Files:**
 - Create: `angular-ui/src/app/features/documents/documents.component.ts`
+- Create: `angular-ui/src/app/features/documents/documents.component.html`
+- Create: `angular-ui/src/app/features/documents/documents.component.scss`
 - Create: `angular-ui/src/app/features/documents/documents.component.spec.ts`
 
 - [ ] **Step 1: Write the failing spec**
@@ -736,7 +898,7 @@ describe('DocumentsComponent', () => {
 });
 ```
 
-- [ ] **Step 2: Run the spec to confirm it fails with a missing module error**
+- [ ] **Step 2: Run the spec to confirm it fails**
 
 ```bash
 cd angular-ui && ng test --watch=false --browsers=ChromeHeadless 2>&1 | tail -20
@@ -744,9 +906,7 @@ cd angular-ui && ng test --watch=false --browsers=ChromeHeadless 2>&1 | tail -20
 
 Expected: compilation error — `Cannot find module './documents.component'`
 
-- [ ] **Step 3: Implement DocumentsComponent**
-
-Create `angular-ui/src/app/features/documents/documents.component.ts`:
+- [ ] **Step 3: Create documents.component.ts**
 
 ```typescript
 import { Component, OnInit, inject } from '@angular/core';
@@ -760,59 +920,8 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
   selector: 'app-documents',
   standalone: true,
   imports: [MatButtonModule, MatIconModule, MatDialogModule],
-  template: `
-    <div class="docs-page">
-      <div class="docs-header">
-        <h2>Documents</h2>
-        <span class="count-badge">{{ documentsService.documents().length }} document(s)</span>
-      </div>
-
-      @if (documentsService.error()) {
-        <div class="alert-strip">{{ documentsService.error() }}</div>
-      }
-      @if (deleteError) {
-        <div class="alert-strip">{{ deleteError }}</div>
-      }
-
-      @if (documentsService.documents().length === 0 && !documentsService.error()) {
-        <p class="empty-state">No documents ingested yet. Use the Ingest page to add files.</p>
-      }
-
-      <div class="doc-list">
-        @for (doc of documentsService.documents(); track doc.sourceId) {
-          <div class="doc-card">
-            <mat-icon class="doc-icon">{{ iconFor(doc.contentType) }}</mat-icon>
-            <div class="doc-info">
-              <div class="doc-name">{{ doc.filename }}</div>
-              <div class="doc-meta">
-                {{ typeBadge(doc.contentType) }} · {{ doc.chunkCount }} chunks ·
-                {{ doc.totalTokens }} tokens · {{ formatBytes(doc.fileSizeBytes) }} ·
-                {{ formatDate(doc.uploadedAt) }}
-              </div>
-            </div>
-            <button mat-stroked-button color="warn"
-              (click)="confirmDelete(doc.sourceId, doc.filename)">
-              Delete
-            </button>
-          </div>
-        }
-      </div>
-    </div>
-  `,
-  styles: [`
-    .docs-page { max-width: 800px; }
-    .docs-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-    h2 { margin: 0; }
-    .count-badge { font-size: 0.85rem; color: rgba(0,0,0,0.54); background: rgba(0,0,0,0.06); padding: 2px 8px; border-radius: 12px; }
-    .alert-strip { background: #ffebee; color: #c62828; border-radius: 4px; padding: 10px 14px; margin-bottom: 12px; }
-    .empty-state { color: rgba(0,0,0,0.4); text-align: center; margin-top: 80px; }
-    .doc-list { display: flex; flex-direction: column; gap: 8px; }
-    .doc-card { display: flex; align-items: center; gap: 12px; border: 1px solid rgba(0,0,0,0.12); border-radius: 6px; padding: 12px 16px; background: #fff; }
-    .doc-icon { color: #3f51b5; flex-shrink: 0; }
-    .doc-info { flex: 1; }
-    .doc-name { font-weight: 500; }
-    .doc-meta { font-size: 0.85rem; color: rgba(0,0,0,0.54); }
-  `]
+  templateUrl: './documents.component.html',
+  styleUrl: './documents.component.scss'
 })
 export class DocumentsComponent implements OnInit {
   protected documentsService = inject(DocumentsService);
@@ -865,18 +974,137 @@ export class DocumentsComponent implements OnInit {
 }
 ```
 
-- [ ] **Step 4: Run the spec and confirm all 8 tests pass**
+- [ ] **Step 4: Create documents.component.html**
+
+```html
+<div class="docs-page">
+  <div class="docs-header">
+    <h2>Documents</h2>
+    <span class="count-badge">{{ documentsService.documents().length }} document(s)</span>
+  </div>
+
+  @if (documentsService.error()) {
+    <div class="alert-strip">{{ documentsService.error() }}</div>
+  }
+  @if (deleteError) {
+    <div class="alert-strip">{{ deleteError }}</div>
+  }
+
+  @if (documentsService.documents().length === 0 && !documentsService.error()) {
+    <p class="empty-state">No documents ingested yet. Use the Ingest page to add files.</p>
+  }
+
+  <div class="doc-list">
+    @for (doc of documentsService.documents(); track doc.sourceId) {
+      <div class="doc-card">
+        <mat-icon class="doc-icon">{{ iconFor(doc.contentType) }}</mat-icon>
+        <div class="doc-info">
+          <div class="doc-name">{{ doc.filename }}</div>
+          <div class="doc-meta">
+            {{ typeBadge(doc.contentType) }} · {{ doc.chunkCount }} chunks ·
+            {{ doc.totalTokens }} tokens · {{ formatBytes(doc.fileSizeBytes) }} ·
+            {{ formatDate(doc.uploadedAt) }}
+          </div>
+        </div>
+        <button mat-stroked-button color="warn"
+          (click)="confirmDelete(doc.sourceId, doc.filename)">
+          Delete
+        </button>
+      </div>
+    }
+  </div>
+</div>
+```
+
+- [ ] **Step 5: Create documents.component.scss**
+
+```scss
+.docs-page {
+  max-width: 800px;
+}
+
+.docs-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  h2 { margin: 0; }
+}
+
+.count-badge {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.54);
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.alert-strip {
+  background: #ffebee;
+  color: #c62828;
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.empty-state {
+  color: rgba(0, 0, 0, 0.4);
+  text-align: center;
+  margin-top: 80px;
+}
+
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doc-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 12px 16px;
+  background: #fff;
+}
+
+.doc-icon {
+  color: #3f51b5;
+  flex-shrink: 0;
+}
+
+.doc-info {
+  flex: 1;
+}
+
+.doc-name {
+  font-weight: 500;
+}
+
+.doc-meta {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.54);
+}
+```
+
+- [ ] **Step 6: Run the spec and confirm all 8 tests pass**
 
 ```bash
 cd angular-ui && ng test --watch=false --browsers=ChromeHeadless 2>&1 | tail -30
 ```
 
-Expected: `DocumentsComponent: 8 specs, 0 failures` (all prior suites still pass — 25 specs total, 0 failures)
+Expected: `DocumentsComponent: 8 specs, 0 failures` (all 25 specs pass)
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-cd angular-ui && cd .. && git add angular-ui/src/app/features/documents/documents.component.ts angular-ui/src/app/features/documents/documents.component.spec.ts && git commit -m "feat(angular-ui): add DocumentsComponent with card list and delete flow"
+git add angular-ui/src/app/features/documents/documents.component.ts \
+        angular-ui/src/app/features/documents/documents.component.html \
+        angular-ui/src/app/features/documents/documents.component.scss \
+        angular-ui/src/app/features/documents/documents.component.spec.ts && \
+git commit -m "feat(angular-ui): add DocumentsComponent with card list and delete flow"
 ```
 
 ---
@@ -886,13 +1114,10 @@ cd angular-ui && cd .. && git add angular-ui/src/app/features/documents/document
 After all three tasks:
 
 ```bash
-cd angular-ui && ng test --watch=false --browsers=ChromeHeadless 2>&1 | grep -E "SUMMARY|specs|failures"
+cd angular-ui && ng test --watch=false --browsers=ChromeHeadless 2>&1 | grep -E "SUCCESS|specs|failures"
 ```
 
-Expected output:
-```
-Executed 25 of 25 SUCCESS
-```
+Expected: `Executed 25 of 25 SUCCESS`
 
 Then smoke-test the running app:
 

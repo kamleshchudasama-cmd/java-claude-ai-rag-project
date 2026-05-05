@@ -2,7 +2,7 @@
 
 **Date:** 2026-05-05  
 **Scope:** Three missing feature components for the Java RAG Angular UI  
-**Approach:** Self-contained standalone components (Approach A — inline templates, no sub-components)
+**Approach:** Self-contained standalone components — separate `.html`, `.ts`, and `.scss` files per component
 
 ---
 
@@ -17,7 +17,7 @@ The Angular UI shell is already in place:
 - `CitationCardComponent` — `mat-expansion-panel` per citation
 - `ConfirmDialogComponent` — delete confirmation dialog
 
-All three feature components follow the same conventions as the existing code: standalone, constructor injection, inline templates, no Lombok equivalent (no decorators beyond `@Component`), Angular Material throughout.
+All three feature components follow the same conventions as the existing code: standalone, constructor injection, Angular Material throughout. Templates go in `.html` files, styles in `.scss` files, class logic in `.ts` files.
 
 ---
 
@@ -168,7 +168,7 @@ Two zones:
 
 | Decision | Choice |
 |---|---|
-| Component style | Standalone, inline template |
+| Component style | Standalone, separate .html / .ts / .scss files |
 | Injection | Constructor injection only |
 | State | Plain component fields for ephemeral UI state; signals via services for shared state |
 | Loading indicator (query) | Send button disabled + spinner; no message placeholder |
