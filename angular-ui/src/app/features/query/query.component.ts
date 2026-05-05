@@ -1,4 +1,5 @@
-import { Component, ElementRef, ViewChild, inject } from '@angular/core';
+import { Component, DestroyRef, ElementRef, ViewChild, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -27,6 +28,7 @@ import { CitationCardComponent } from '../../shared/citation-card/citation-card.
 export class QueryComponent {
   protected chatService = inject(ChatService);
   private ragApi = inject(RagApiService);
+  private destroyRef = inject(DestroyRef);
 
   @ViewChild('messageList') private messageList!: ElementRef<HTMLElement>;
 
@@ -39,7 +41,7 @@ export class QueryComponent {
     this.inputText = '';
     this.isLoading = true;
     this.chatService.addUserMessage(text);
-    this.ragApi.query(text).subscribe({
+    this.ragApi.query(text).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: response => {
         this.chatService.addAssistantMessage(response);
         this.isLoading = false;
