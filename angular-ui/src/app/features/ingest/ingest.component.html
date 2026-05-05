@@ -1,0 +1,53 @@
+<div class="page-center">
+  <div class="upload-card">
+    <h2>Ingest Document</h2>
+
+    <div class="drop-zone"
+      [class.drag-over]="isDragOver"
+      [class.dimmed]="state !== 'idle'"
+      [class.no-pointer]="state === 'uploading'"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave()"
+      (drop)="onDrop($event)"
+      (click)="state === 'idle' && fileInput.click()">
+      <mat-icon class="drop-icon">upload_file</mat-icon>
+      <p class="drop-hint">
+        Drop file here or
+        <span class="browse-link" (click)="$event.stopPropagation(); fileInput.click()">browse</span>
+      </p>
+      <p class="drop-types">PDF · DOCX · HTML · up to 50 MB</p>
+    </div>
+
+    <input #fileInput type="file" accept=".pdf,.docx,.html" class="hidden-input"
+      (change)="onFileSelected($event)" />
+
+    @if (state === 'fileSelected' || state === 'uploading') {
+      <div class="preview-card">
+        <mat-icon class="file-icon">{{ iconFor(selectedFile!.type) }}</mat-icon>
+        <div class="file-info">
+          <div class="file-name">{{ selectedFile!.name }}</div>
+          <div class="file-meta">{{ formatBytes(selectedFile!.size) }} · {{ typeBadge(selectedFile!.type) }}</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button mat-raised-button color="primary"
+          [disabled]="state === 'uploading'"
+          (click)="upload()">
+          @if (state === 'uploading') {
+            <mat-spinner diameter="20" />
+          } @else {
+            Upload
+          }
+        </button>
+        <button mat-button [disabled]="state === 'uploading'" (click)="clear()">Clear</button>
+      </div>
+    }
+
+    @if (errorMessage) {
+      <p class="status-error">{{ errorMessage }}</p>
+    }
+    @if (successMessage) {
+      <p class="status-success">{{ successMessage }}</p>
+    }
+  </div>
+</div>
