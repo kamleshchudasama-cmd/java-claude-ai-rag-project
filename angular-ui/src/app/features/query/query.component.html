@@ -1,0 +1,41 @@
+<div class="chat-container">
+  <div class="message-list" #messageList>
+    @if (chatService.messages().length === 0) {
+      <p class="empty-state">Ask a question to get started</p>
+    }
+    @for (msg of chatService.messages(); track $index) {
+      @if (msg.role === 'user') {
+        <div class="message-row user">
+          <div class="bubble user-bubble">{{ msg.text }}</div>
+        </div>
+      } @else {
+        <div class="message-row assistant">
+          <div class="assistant-card">
+            <p class="answer-text">{{ msg.text }}</p>
+            @for (citation of (msg.citations ?? []); track citation.ref) {
+              <app-citation-card [citation]="citation" />
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+  <div class="input-bar">
+    <mat-form-field appearance="outline" class="input-field">
+      <input matInput
+        [(ngModel)]="inputText"
+        placeholder="Ask a question…"
+        [disabled]="isLoading"
+        (keydown.enter)="send()" />
+    </mat-form-field>
+    <button mat-icon-button color="primary"
+      [disabled]="isLoading || !inputText.trim()"
+      (click)="send()">
+      @if (isLoading) {
+        <mat-spinner diameter="20" />
+      } @else {
+        <mat-icon>send</mat-icon>
+      }
+    </button>
+  </div>
+</div>
