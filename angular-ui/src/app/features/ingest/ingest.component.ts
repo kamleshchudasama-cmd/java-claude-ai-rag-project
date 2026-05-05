@@ -1,4 +1,5 @@
-import { Component, inject } from '@angular/core';
+import { Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -22,6 +23,7 @@ const MAX_BYTES = 50 * 1024 * 1024;
 })
 export class IngestComponent {
   private ragApi = inject(RagApiService);
+  private destroyRef = inject(DestroyRef);
 
   state: UploadState = 'idle';
   isDragOver = false;
@@ -34,7 +36,9 @@ export class IngestComponent {
     this.isDragOver = true;
   }
 
-  onDragLeave(): void {
+  onDragLeave(event: DragEvent): void {
+    const related = event.relatedTarget as Node | null;
+    if (related && (event.currentTarget as HTMLElement).contains(related)) return;
     this.isDragOver = false;
   }
 
@@ -56,7 +60,9 @@ export class IngestComponent {
     if (!this.selectedFile || this.state !== 'fileSelected') return;
     this.state = 'uploading';
     this.errorMessage = '';
-    this.ragApi.ingest(this.selectedFile).subscribe({
+    this.ragApi.ingest(this.selectedFile)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
       next: () => {
         this.state = 'idle';
         this.selectedFile = null;
@@ -74,6 +80,7 @@ export class IngestComponent {
     this.state = 'idle';
     this.selectedFile = null;
     this.errorMessage = '';
+    this.successMessage = '';
   }
 
   private setFile(file: File): void {

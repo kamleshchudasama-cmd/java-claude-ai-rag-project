@@ -7,7 +7,7 @@
       [class.dimmed]="state !== 'idle'"
       [class.no-pointer]="state === 'uploading'"
       (dragover)="onDragOver($event)"
-      (dragleave)="onDragLeave()"
+      (dragleave)="onDragLeave($event)"
       (drop)="onDrop($event)"
       (click)="state === 'idle' && fileInput.click()">
       <mat-icon class="drop-icon">upload_file</mat-icon>

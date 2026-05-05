@@ -95,4 +95,11 @@ describe('IngestComponent', () => {
     expect(component.state).toBe('idle');
     expect(component.selectedFile).toBeNull();
   });
+
+  it('clear() also resets successMessage', () => {
+    (component as any).setFile(pdfFile);
+    component.successMessage = 'Uploaded successfully';
+    component.clear();
+    expect(component.successMessage).toBe('');
+  });
 });
