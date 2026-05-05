@@ -1,0 +1,37 @@
+<div class="docs-page">
+  <div class="docs-header">
+    <h2>Documents</h2>
+    <span class="count-badge">{{ documentsService.documents().length }} document(s)</span>
+  </div>
+
+  @if (documentsService.error()) {
+    <div class="alert-strip">{{ documentsService.error() }}</div>
+  }
+  @if (deleteError) {
+    <div class="alert-strip">{{ deleteError }}</div>
+  }
+
+  @if (documentsService.documents().length === 0 && !documentsService.error()) {
+    <p class="empty-state">No documents ingested yet. Use the Ingest page to add files.</p>
+  }
+
+  <div class="doc-list">
+    @for (doc of documentsService.documents(); track doc.sourceId) {
+      <div class="doc-card">
+        <mat-icon class="doc-icon">{{ iconFor(doc.contentType) }}</mat-icon>
+        <div class="doc-info">
+          <div class="doc-name">{{ doc.filename }}</div>
+          <div class="doc-meta">
+            {{ typeBadge(doc.contentType) }} · {{ doc.chunkCount }} chunks ·
+            {{ doc.totalTokens }} tokens · {{ formatBytes(doc.fileSizeBytes) }} ·
+            {{ formatDate(doc.uploadedAt) }}
+          </div>
+        </div>
+        <button mat-stroked-button color="warn"
+          (click)="confirmDelete(doc.sourceId, doc.filename)">
+          Delete
+        </button>
+      </div>
+    }
+  </div>
+</div>

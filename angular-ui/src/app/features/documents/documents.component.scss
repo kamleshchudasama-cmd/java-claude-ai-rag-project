@@ -1,0 +1,68 @@
+.docs-page {
+  max-width: 800px;
+}
+
+.docs-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  h2 { margin: 0; }
+}
+
+.count-badge {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.54);
+  background: rgba(0, 0, 0, 0.06);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.alert-strip {
+  background: #ffebee;
+  color: #c62828;
+  border-radius: 4px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+}
+
+.empty-state {
+  color: rgba(0, 0, 0, 0.4);
+  text-align: center;
+  margin-top: 80px;
+}
+
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.doc-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 12px 16px;
+  background: #fff;
+}
+
+.doc-icon {
+  color: #3f51b5;
+  flex-shrink: 0;
+}
+
+.doc-info {
+  flex: 1;
+}
+
+.doc-name {
+  font-weight: 500;
+}
+
+.doc-meta {
+  font-size: 0.85rem;
+  color: rgba(0, 0, 0, 0.54);
+}
