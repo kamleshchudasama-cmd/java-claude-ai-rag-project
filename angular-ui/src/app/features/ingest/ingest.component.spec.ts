@@ -102,4 +102,38 @@ describe('IngestComponent', () => {
     component.clear();
     expect(component.successMessage).toBe('');
   });
+
+  it('accepts HTML file type and transitions to fileSelected state', () => {
+    const htmlFile = new File(['<html></html>'], 'page.html', { type: 'text/html' });
+    (component as any).setFile(htmlFile);
+    fixture.detectChanges();
+    expect(component.state).toBe('fileSelected');
+    expect(fixture.nativeElement.querySelector('.preview-card')).toBeTruthy();
+  });
+
+  it('clear() resets errorMessage to an empty string', () => {
+    (component as any).setFile(new File([''], 'bad.exe', { type: 'application/x-msdownload' }));
+    expect(component.errorMessage).toContain('Unsupported file type');
+    component.clear();
+    expect(component.errorMessage).toBe('');
+  });
+
+  it('upload button is disabled while state is uploading', () => {
+    const subject = new Subject<void>();
+    ragApiSpy.ingest.and.returnValue(subject.asObservable());
+    (component as any).setFile(pdfFile);
+    component.upload();
+    fixture.detectChanges();
+    const uploadBtn: HTMLButtonElement = fixture.nativeElement.querySelector('button[color="primary"]');
+    expect(uploadBtn.disabled).toBeTrue();
+    subject.complete();
+  });
+
+  it('onFileSelected calls setFile with the chosen file', () => {
+    spyOn(component as any, 'setFile');
+    const file = new File([''], 'page.html', { type: 'text/html' });
+    const mockEvent = { target: { files: [file], value: '' } } as unknown as Event;
+    component.onFileSelected(mockEvent);
+    expect((component as any).setFile).toHaveBeenCalledWith(file);
+  });
 });
