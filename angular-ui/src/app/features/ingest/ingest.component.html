@@ -15,10 +15,10 @@
         Drop file here or
         <span class="browse-link" (click)="$event.stopPropagation(); fileInput.click()">browse</span>
       </p>
-      <p class="drop-types">PDF · DOCX · HTML · up to 50 MB</p>
+      <p class="drop-types">PDF · DOCX · HTML · MD · up to 50 MB</p>
     </div>
 
-    <input #fileInput type="file" accept=".pdf,.docx,.html" class="hidden-input"
+    <input #fileInput type="file" accept=".pdf,.docx,.html,.md" class="hidden-input"
       (change)="onFileSelected($event)" />
 
     @if (state === 'fileSelected' || state === 'uploading') {
@@ -30,7 +30,7 @@
         </div>
       </div>
       <div class="actions">
-        <button mat-raised-button color="primary"
+        <button mat-raised-button color="primary" data-testid="upload-btn"
           [disabled]="state === 'uploading'"
           (click)="upload()">
           @if (state === 'uploading') {

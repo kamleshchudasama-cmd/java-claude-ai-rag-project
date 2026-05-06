@@ -124,7 +124,7 @@ describe('IngestComponent', () => {
     (component as any).setFile(pdfFile);
     component.upload();
     fixture.detectChanges();
-    const uploadBtn: HTMLButtonElement = fixture.nativeElement.querySelector('button[color="primary"]');
+    const uploadBtn: HTMLButtonElement = fixture.nativeElement.querySelector('[data-testid="upload-btn"]');
     expect(uploadBtn.disabled).toBeTrue();
     subject.complete();
   });
@@ -135,5 +135,36 @@ describe('IngestComponent', () => {
     const mockEvent = { target: { files: [file], value: '' } } as unknown as Event;
     component.onFileSelected(mockEvent);
     expect((component as any).setFile).toHaveBeenCalledWith(file);
+  });
+
+  it('onDrop with a valid PDF transitions to fileSelected state', () => {
+    const dropEvent = {
+      preventDefault: jasmine.createSpy('preventDefault'),
+      dataTransfer: { files: [pdfFile] }
+    } as unknown as DragEvent;
+    component.onDrop(dropEvent);
+    fixture.detectChanges();
+    expect(dropEvent.preventDefault).toHaveBeenCalled();
+    expect(component.isDragOver).toBeFalse();
+    expect(component.state).toBe('fileSelected');
+    expect(component.selectedFile).toBe(pdfFile);
+  });
+
+  it('destroying the component mid-upload does not mutate state after destroy', () => {
+    const subject = new Subject<void>();
+    ragApiSpy.ingest.and.returnValue(subject.asObservable());
+    (component as any).setFile(pdfFile);
+    component.upload();
+    expect(component.state).toBe('uploading');
+
+    fixture.destroy();
+
+    // Emit after destroy — takeUntilDestroyed should have cancelled the subscription
+    subject.next();
+    subject.complete();
+
+    // State stays as 'uploading'; the next/error callbacks did NOT fire
+    expect(component.state).toBe('uploading');
+    expect(component.selectedFile).not.toBeNull();
   });
 });
