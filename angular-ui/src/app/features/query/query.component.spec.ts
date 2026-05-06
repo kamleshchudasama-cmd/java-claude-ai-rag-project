@@ -99,4 +99,43 @@ describe('QueryComponent', () => {
     expect(errorSpy).toHaveBeenCalled();
     expect(component.isLoading).toBeFalse();
   }));
+
+  it('send() does nothing when inputText is whitespace-only', fakeAsync(() => {
+    component.inputText = '   ';
+    component.send();
+    tick();
+    expect(ragApiSpy.query).not.toHaveBeenCalled();
+    expect(chatService.messages().length).toBe(0);
+  }));
+
+  it('Send button is disabled while isLoading is true', () => {
+    const subject = new Subject<RagResponse>();
+    ragApiSpy.query.and.returnValue(subject.asObservable());
+    component.inputText = 'test';
+    component.send();
+    fixture.detectChanges();
+    const sendBtn: HTMLButtonElement = fixture.nativeElement.querySelector('button[mat-icon-button]');
+    expect(sendBtn.disabled).toBeTrue();
+    subject.complete();
+  });
+
+  it('empty-state element is removed after the first message is sent', fakeAsync(() => {
+    component.inputText = 'Hello';
+    component.send();
+    tick();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.empty-state')).toBeNull();
+  }));
+
+  it('multiple consecutive sends accumulate all messages in the list', fakeAsync(() => {
+    component.inputText = 'Question 1';
+    component.send();
+    tick();
+    component.inputText = 'Question 2';
+    component.send();
+    tick();
+    // 2 user messages + 2 assistant responses = 4 total
+    expect(chatService.messages().length).toBe(4);
+    expect(chatService.messages()[2]).toEqual({ role: 'user', text: 'Question 2' });
+  }));
 });
