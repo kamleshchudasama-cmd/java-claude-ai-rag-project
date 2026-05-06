@@ -45,4 +45,15 @@ describe('ChatService', () => {
       text: 'Something went wrong. Please try again.'
     });
   });
+
+  it('messages() starts as an empty array', () => {
+    expect(service.messages()).toEqual([]);
+  });
+
+  it('addAssistantMessage with empty citations stores citations as an empty array', () => {
+    const response: RagResponse = { answer: 'Hello', citations: [], totalTokens: 5 };
+    service.addAssistantMessage(response);
+    expect(service.messages()[0].citations).toEqual([]);
+    expect(service.messages()[0].totalTokens).toBe(5);
+  });
 });
