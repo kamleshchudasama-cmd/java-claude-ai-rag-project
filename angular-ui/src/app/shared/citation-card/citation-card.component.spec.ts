@@ -31,7 +31,7 @@ describe('CitationCardComponent', () => {
   });
 
   it('displays the similarity score formatted to 2 decimal places', () => {
-    // citation from beforeEach has score: 0.924 — DecimalPipe '1.2-2' renders it as "0.92"
+    // score 0.924 rounds down to 0.92 with DecimalPipe format '1.2-2'
     const header: HTMLElement = fixture.nativeElement.querySelector('mat-panel-title');
     expect(header.textContent).toContain('0.92');
   });
