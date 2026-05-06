@@ -74,7 +74,6 @@ describe('RagApiService', () => {
     service.listDocuments().subscribe({ error: e => caughtError = e });
     const req = http.expectOne(`${base}/api/rag/documents`);
     req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-    expect(caughtError).toBeTruthy();
     expect(caughtError.status).toBe(500);
   });
 });
