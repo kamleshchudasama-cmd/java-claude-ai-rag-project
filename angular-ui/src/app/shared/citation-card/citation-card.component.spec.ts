@@ -29,4 +29,21 @@ describe('CitationCardComponent', () => {
     const body: HTMLElement = fixture.nativeElement.querySelector('.chunk-text');
     expect(body.textContent).toContain('Some excerpt text.');
   });
+
+  it('displays the similarity score formatted to 2 decimal places', () => {
+    // citation from beforeEach has score: 0.924 — DecimalPipe '1.2-2' renders it as "0.92"
+    const header: HTMLElement = fixture.nativeElement.querySelector('mat-panel-title');
+    expect(header.textContent).toContain('0.92');
+  });
+
+  it('renders correctly when ref is greater than 1', () => {
+    const altCitation: Citation = {
+      ref: 3, filename: 'notes.pdf', chunkIndex: 1, score: 0.85, chunkText: 'alt excerpt'
+    };
+    fixture.componentRef.setInput('citation', altCitation);
+    fixture.detectChanges();
+    const header: HTMLElement = fixture.nativeElement.querySelector('mat-panel-title');
+    expect(header.textContent).toContain('[3]');
+    expect(header.textContent).toContain('notes.pdf');
+  });
 });
