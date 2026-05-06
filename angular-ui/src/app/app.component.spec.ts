@@ -26,8 +26,8 @@ describe('AppComponent', () => {
   it('renders Query, Ingest, and Documents nav links', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
-    const titleSpans: HTMLSpanElement[] = Array.from(
-      fixture.nativeElement.querySelectorAll('mat-nav-list a span[matlistitemtitle]')
+    const titleSpans: HTMLElement[] = Array.from(
+      fixture.nativeElement.querySelectorAll('span[matlistitemtitle]')
     );
     const texts = titleSpans.map(s => s.textContent?.trim());
     expect(texts).toContain('Query');
@@ -41,6 +41,7 @@ describe('AppComponent', () => {
     const links: HTMLAnchorElement[] = Array.from(
       fixture.nativeElement.querySelectorAll('mat-nav-list a')
     );
+    expect(links.length).toBe(3);
     const hrefs = links.map(l => l.getAttribute('href'));
     expect(hrefs).toContain('/query');
     expect(hrefs).toContain('/ingest');
