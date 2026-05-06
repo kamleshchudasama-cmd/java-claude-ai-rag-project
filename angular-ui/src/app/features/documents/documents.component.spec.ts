@@ -107,4 +107,36 @@ describe('DocumentsComponent', () => {
     btn.click();
     expect(fakeService.delete).not.toHaveBeenCalled();
   });
+
+  it('error strip is absent when the error signal is null', () => {
+    fakeService.error.set(null);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.alert-strip')).toBeNull();
+  });
+
+  it('doc card displays chunk count and total tokens in the meta line', () => {
+    fakeService.documents.set([mockDoc]);
+    fixture.detectChanges();
+    const meta: HTMLElement = fixture.nativeElement.querySelector('.doc-meta');
+    expect(meta.textContent).toContain('42 chunks');
+    expect(meta.textContent).toContain('8320 tokens');
+  });
+
+  it('doc card displays a human-readable file size', () => {
+    // mockDoc.fileSizeBytes = 2_500_000 → formatBytes → "2.4 MB"
+    fakeService.documents.set([mockDoc]);
+    fixture.detectChanges();
+    const meta: HTMLElement = fixture.nativeElement.querySelector('.doc-meta');
+    expect(meta.textContent).toContain('2.4 MB');
+  });
+
+  it('doc card displays a formatted uploadedAt date string', () => {
+    // Use noon UTC to avoid date-shifting across timezones
+    const safeDoc = { ...mockDoc, uploadedAt: '2025-06-15T12:00:00Z' };
+    fakeService.documents.set([safeDoc]);
+    fixture.detectChanges();
+    const meta: HTMLElement = fixture.nativeElement.querySelector('.doc-meta');
+    expect(meta.textContent).toContain('Jun');
+    expect(meta.textContent).toContain('15');
+  });
 });
