@@ -33,13 +33,16 @@ describe('ConfirmDialogComponent', () => {
     expect(content.textContent).toContain('test.pdf');
   });
 
-  it('Cancel button is present and has the mat-dialog-close attribute', () => {
+  it('Cancel button closes the dialog without confirming when clicked', () => {
     const buttons: HTMLButtonElement[] = Array.from(
       fixture.nativeElement.querySelectorAll('button')
     );
     const cancelBtn = buttons.find(b => b.textContent?.trim() === 'Cancel');
     expect(cancelBtn).toBeTruthy();
-    expect(cancelBtn!.hasAttribute('mat-dialog-close')).toBeTrue();
+    cancelBtn!.click();
+    expect(dialogRefSpy.close).toHaveBeenCalledTimes(1);
+    const arg = dialogRefSpy.close.calls.mostRecent().args[0];
+    expect(arg).toBeFalsy();
   });
 
   it('Delete button closes the dialog with true when clicked', () => {
