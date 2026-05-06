@@ -49,4 +49,32 @@ describe('DocumentsService', () => {
     service.delete('abc123', onError);
     expect(onError).toHaveBeenCalled();
   });
+
+  it('load() clears a previous error when the subsequent request succeeds', () => {
+    apiSpy.listDocuments.and.returnValue(throwError(() => new Error('500')));
+    service.load();
+    expect(service.error()).toBe('Failed to load documents.');
+
+    apiSpy.listDocuments.and.returnValue(of([mockDoc]));
+    service.load();
+    expect(service.error()).toBeNull();
+  });
+
+  it('delete() on success re-loads documents and clears a pre-existing error', () => {
+    apiSpy.listDocuments.and.returnValue(throwError(() => new Error('500')));
+    service.load();
+    expect(service.error()).toBe('Failed to load documents.');
+
+    apiSpy.listDocuments.and.returnValue(of([mockDoc]));
+    apiSpy.deleteDocument.and.returnValue(of(undefined));
+    service.delete('abc123', () => {});
+    expect(service.error()).toBeNull();
+    expect(service.documents()).toEqual([mockDoc]);
+  });
+
+  it('delete() does not call load() when the API returns an error', () => {
+    apiSpy.deleteDocument.and.returnValue(throwError(() => new Error('500')));
+    service.delete('abc123', () => {});
+    expect(apiSpy.listDocuments).not.toHaveBeenCalled();
+  });
 });
