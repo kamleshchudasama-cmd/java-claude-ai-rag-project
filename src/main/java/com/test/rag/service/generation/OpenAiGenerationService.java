@@ -9,12 +9,13 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.openai.OpenAiChatOptions;
+import com.test.rag.exception.GenerationException;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
@@ -33,7 +34,7 @@ public class OpenAiGenerationService implements GenerationService {
 
     @Override
     @Retryable(
-            retryFor = {HttpClientErrorException.TooManyRequests.class, IOException.class},
+            retryFor = {HttpClientErrorException.TooManyRequests.class, ResourceAccessException.class},
             maxAttempts = 3,
             backoff = @Backoff(delay = 10_000)
     )
@@ -51,7 +52,7 @@ public class OpenAiGenerationService implements GenerationService {
                 .chatResponse();
 
         if (Objects.isNull(chatResponse.getResult()) || Objects.isNull(chatResponse.getResult().getOutput())) {
-            throw new RuntimeException("Generation response was empty");
+            throw new GenerationException("Generation response was empty");
         }
         String answer = chatResponse.getResult().getOutput().getText();
         long totalTokens = Objects.nonNull(chatResponse.getMetadata().getUsage())
