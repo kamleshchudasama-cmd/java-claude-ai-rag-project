@@ -65,6 +65,7 @@ public class RecursiveChunkingService implements ChunkingService {
             if (trimmed.isEmpty() || trimmed.length() < minChunkChars) continue;
 
             int tokenCount = (int) Math.ceil((double) trimmed.length() / CHARS_PER_TOKEN);
+            // sourceId (SHA-256 of filename+size) prevents collision when two files share the same name
             String chunkId = sha256(sourceId + index);
 
             Map<String, String> meta = new HashMap<>(document.metadata());
