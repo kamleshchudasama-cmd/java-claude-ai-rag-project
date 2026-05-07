@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -73,22 +74,9 @@ public class PgVectorStoreService implements VectorStoreService {
     @Transactional
     public boolean deleteBySource(String sourceId) {
         FilterExpressionBuilder b = new FilterExpressionBuilder();
-        SearchRequest request = SearchRequest.builder()
-                .query(" ")
-                .topK(10_000)
-                .similarityThreshold(0.0)
-                .filterExpression(b.eq("source_id", sourceId).build())
-                .build();
-
-        List<Document> found = vectorStore.similaritySearch(request);
-        if (found.isEmpty()) {
-            log.warn("deleteBySource: no chunks found for sourceId='{}'", sourceId);
-            return false;
-        }
-
-        List<String> ids = found.stream().map(Document::getId).toList();
-        vectorStore.delete(ids);
-        log.info("deleteBySource: deleted chunks={} sourceId='{}'", ids.size(), sourceId);
+        Filter.Expression filter = b.eq("source_id", sourceId).build();
+        vectorStore.delete(filter);
+        log.info("deleteBySource: issued filter-based delete for sourceId='{}'", sourceId);
         return true;
     }
 
@@ -104,14 +92,14 @@ public class PgVectorStoreService implements VectorStoreService {
 
         List<Document> allChunks = vectorStore.similaritySearch(request);
 
-        // Group chunks by filename, then roll up metadata per document
-        Map<String, List<Document>> byFilename = allChunks.stream()
+        // Group chunks by source_id to avoid collisions when two files share the same filename
+        Map<String, List<Document>> bySourceId = allChunks.stream()
                 .collect(Collectors.groupingBy(doc ->
-                        String.valueOf(doc.getMetadata().getOrDefault("filename", "unknown"))));
+                        String.valueOf(doc.getMetadata().getOrDefault("source_id", "unknown"))));
 
-        List<DocumentSummary> summaries = byFilename.entrySet().stream()
+        List<DocumentSummary> summaries = bySourceId.entrySet().stream()
                 .map(entry -> {
-                    String filename = entry.getKey();
+                    String groupSourceId = entry.getKey();
                     List<Document> chunks = entry.getValue();
                     // Use first chunk's metadata for document-level fields
                     Map<String, Object> meta = chunks.get(0).getMetadata();
@@ -121,8 +109,8 @@ public class PgVectorStoreService implements VectorStoreService {
                             .sum();
 
                     return new DocumentSummary(
-                            filename,
-                            nullableString(meta.get("source_id")),
+                            nullableString(meta.get("filename")),
+                            groupSourceId,
                             nullableString(meta.get("content-type")),
                             nullableString(meta.get("author")),
                             nullableString(meta.get("created-date")),
@@ -132,7 +120,8 @@ public class PgVectorStoreService implements VectorStoreService {
                             totalTokens
                     );
                 })
-                .sorted(Comparator.comparing(DocumentSummary::filename))
+                .sorted(Comparator.comparing(DocumentSummary::filename,
+                        Comparator.nullsLast(Comparator.naturalOrder())))
                 .toList();
 
         log.info("listDocuments documents={} totalChunks={} latencyMs={}",

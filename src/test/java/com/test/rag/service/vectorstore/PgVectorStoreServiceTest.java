@@ -12,6 +12,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.ai.vectorstore.filter.Filter;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -106,32 +107,29 @@ class PgVectorStoreServiceTest {
     }
 
     @Test
-    void deleteBySource_noChunksFound_logsWarningNoException() {
-        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of());
-        // Should not throw
+    void deleteBySource_callsFilterBasedDeleteWithSourceId() {
+        // Filter-based delete — no similarity search needed; always calls delete(Filter.Expression)
+        ArgumentCaptor<Filter.Expression> filterCaptor = ArgumentCaptor.captor();
+
         service.deleteBySource("missing.pdf");
+
         verify(vectorStore, never()).delete(anyList());
+        verify(vectorStore).delete(filterCaptor.capture());
+        // The captured filter should encode the eq("source_id", "missing.pdf") expression
+        assertThat(filterCaptor.getValue()).isNotNull();
     }
 
     @Test
-    void deleteBySource_chunksFound_callsDeleteWithDocumentIds() {
-        Document doc1 = Document.builder()
-                .id("doc-id-1")
-                .text("Chunk one")
-                .metadata(Map.of("filename", "report.pdf"))
-                .build();
-        Document doc2 = Document.builder()
-                .id("doc-id-2")
-                .text("Chunk two")
-                .metadata(Map.of("filename", "report.pdf"))
-                .build();
-        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(doc1, doc2));
-        ArgumentCaptor<List<String>> idsCaptor = ArgumentCaptor.captor();
+    void deleteBySource_alwaysInvokesFilterDelete_regardlessOfStoredChunks() {
+        // With filter-based delete, the VectorStore handles absence gracefully
+        // — no similarity search pre-check needed
+        ArgumentCaptor<Filter.Expression> filterCaptor = ArgumentCaptor.captor();
 
         service.deleteBySource("report.pdf");
 
-        verify(vectorStore).delete(idsCaptor.capture());
-        assertThat(idsCaptor.getValue()).containsExactlyInAnyOrder("doc-id-1", "doc-id-2");
+        verify(vectorStore, never()).similaritySearch(any(SearchRequest.class));
+        verify(vectorStore).delete(filterCaptor.capture());
+        assertThat(filterCaptor.getValue()).isNotNull();
     }
 
     @Test
