@@ -14,6 +14,7 @@ import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,7 +33,7 @@ public class OpenAiGenerationService implements GenerationService {
 
     @Override
     @Retryable(
-            retryFor = HttpClientErrorException.TooManyRequests.class,
+            retryFor = {HttpClientErrorException.TooManyRequests.class, IOException.class},
             maxAttempts = 3,
             backoff = @Backoff(delay = 10_000)
     )
@@ -49,6 +50,9 @@ public class OpenAiGenerationService implements GenerationService {
                 .call()
                 .chatResponse();
 
+        if (Objects.isNull(chatResponse.getResult()) || Objects.isNull(chatResponse.getResult().getOutput())) {
+            throw new RuntimeException("Generation response was empty");
+        }
         String answer = chatResponse.getResult().getOutput().getText();
         long totalTokens = Objects.nonNull(chatResponse.getMetadata().getUsage())
                 ? chatResponse.getMetadata().getUsage().getTotalTokens() : 0;
