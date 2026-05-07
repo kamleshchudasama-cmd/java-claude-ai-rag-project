@@ -9,11 +9,14 @@ import java.util.List;
 /**
  * Single gateway for all PGVector reads and writes.
  * No other service may import VectorStore or run SQL.
- * search() accepts the original query text; Spring AI VectorStore embeds it internally.
  */
 public interface VectorStoreService {
     void upsert(List<EmbeddedChunk> chunks);
-    List<ScoredChunk> search(String query, int topK, double threshold);
+
+    /**
+     * Searches the vector store using a pre-normalized L2 embedding.
+     */
+    List<ScoredChunk> search(float[] queryEmbedding, int topK, double threshold);
 
     /**
      * Deletes all chunks belonging to the given source ID atomically.

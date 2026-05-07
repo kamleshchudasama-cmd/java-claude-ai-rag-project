@@ -1,5 +1,6 @@
 package com.test.rag.service.vectorstore;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.test.rag.model.DocumentChunk;
 import com.test.rag.model.EmbeddedChunk;
 import com.test.rag.model.ScoredChunk;
@@ -13,6 +14,8 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
@@ -23,6 +26,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,11 +37,17 @@ class PgVectorStoreServiceTest {
     @Mock
     private VectorStore vectorStore;
 
+    @Mock
+    private JdbcTemplate jdbcTemplate;
+
+    @Mock
+    private ObjectMapper objectMapper;
+
     private VectorStoreService service;
 
     @BeforeEach
     void setUp() {
-        service = new PgVectorStoreService(vectorStore);
+        service = new PgVectorStoreService(vectorStore, jdbcTemplate, objectMapper);
     }
 
     @Test
@@ -63,30 +73,26 @@ class PgVectorStoreServiceTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void search_returnsEmptyListWhenNoResults() {
-        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of());
+        when(jdbcTemplate.query(any(String.class), any(RowMapper.class), any(), any(), any(), any(), any()))
+                .thenReturn(List.of());
 
-        List<ScoredChunk> result = service.search("test query", 5, 0.75);
+        List<ScoredChunk> result = service.search(new float[]{0.1f, 0.2f}, 5, 0.75);
 
         assertThat(result).isEmpty();
     }
 
     @Test
-    void search_mapsDocumentToScoredChunk() {
-        Document doc = Document.builder()
-                .id("chunk-id-1")
-                .text("Chunk content")
-                .metadata(Map.of(
-                        "chunkId", "chunk-id-1",
-                        "chunkIndex", "0",
-                        "tokenCount", "3",
-                        "filename", "test.pdf"
-                ))
-                .score(0.92)
-                .build();
-        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(doc));
+    @SuppressWarnings("unchecked")
+    void search_returnsMappedScoredChunks() {
+        DocumentChunk chunk = new DocumentChunk("chunk-id-1", "Chunk content", 0, 3,
+                Map.of("chunkId", "chunk-id-1", "filename", "test.pdf"));
+        ScoredChunk scoredChunk = new ScoredChunk(chunk, BigDecimal.valueOf(0.92));
+        when(jdbcTemplate.query(any(String.class), any(RowMapper.class), any(), any(), any(), any(), any()))
+                .thenReturn(List.of(scoredChunk));
 
-        List<ScoredChunk> result = service.search("query", 5, 0.75);
+        List<ScoredChunk> result = service.search(new float[]{0.1f, 0.2f}, 5, 0.75);
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).similarityScore()).isEqualTo(BigDecimal.valueOf(0.92));
@@ -95,15 +101,20 @@ class PgVectorStoreServiceTest {
     }
 
     @Test
-    void search_passesTopKAndThresholdToSearchRequest() {
-        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of());
-        ArgumentCaptor<SearchRequest> captor = ArgumentCaptor.captor();
+    @SuppressWarnings("unchecked")
+    void search_passesTopKAndThresholdToQuery() {
+        when(jdbcTemplate.query(any(String.class), any(RowMapper.class), any(), any(), any(), any(), any()))
+                .thenReturn(List.of());
+        ArgumentCaptor<Object[]> paramsCaptor = ArgumentCaptor.captor();
 
-        service.search("query", 3, 0.8);
+        service.search(new float[]{0.1f, 0.2f}, 3, 0.8);
 
-        verify(vectorStore).similaritySearch(captor.capture());
-        assertThat(captor.getValue().getTopK()).isEqualTo(3);
-        assertThat(captor.getValue().getSimilarityThreshold()).isEqualTo(0.8);
+        verify(jdbcTemplate).query(any(String.class), any(RowMapper.class),
+                paramsCaptor.capture());
+        Object[] params = paramsCaptor.getValue();
+        // params: vectorStr, vectorStr, threshold, vectorStr, topK
+        assertThat(params[2]).isEqualTo(0.8);
+        assertThat(params[4]).isEqualTo(3);
     }
 
     @Test
@@ -133,44 +144,14 @@ class PgVectorStoreServiceTest {
     }
 
     @Test
-    void search_documentWithNonNumericChunkIndex_defaultsToZero() {
-        Document doc = Document.builder()
-                .id("chunk-bad-index")
-                .text("Some content")
-                .metadata(Map.of(
-                        "chunkId", "chunk-bad-index",
-                        "chunkIndex", "not-a-number",
-                        "tokenCount", "10",
-                        "filename", "file.pdf"
-                ))
-                .score(0.80)
-                .build();
-        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(doc));
+    @SuppressWarnings("unchecked")
+    void search_doesNotCallVectorStoreSimilaritySearch() {
+        when(jdbcTemplate.query(any(String.class), any(RowMapper.class), any(), any(), any(), any(), any()))
+                .thenReturn(List.of());
 
-        List<ScoredChunk> result = service.search("query", 5, 0.75);
+        service.search(new float[]{0.1f, 0.2f}, 5, 0.75);
 
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).chunk().chunkIndex()).isZero();
-    }
-
-    @Test
-    void search_documentWithNullTokenCount_defaultsToZero() {
-        Document doc = Document.builder()
-                .id("chunk-null-tokens")
-                .text("Some content")
-                .metadata(Map.of(
-                        "chunkId", "chunk-null-tokens",
-                        "chunkIndex", "2",
-                        "filename", "file.pdf"
-                ))
-                .score(0.85)
-                .build();
-        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of(doc));
-
-        List<ScoredChunk> result = service.search("query", 5, 0.75);
-
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).chunk().tokenCount()).isZero();
+        verify(vectorStore, never()).similaritySearch(any(SearchRequest.class));
     }
 
     // --- helpers ---

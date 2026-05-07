@@ -1,5 +1,6 @@
 package com.test.rag.service.vectorstore;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.test.rag.model.DocumentChunk;
 import com.test.rag.model.DocumentSummary;
 import com.test.rag.model.EmbeddedChunk;
@@ -11,6 +12,7 @@ import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.ai.vectorstore.filter.Filter;
 import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,9 +32,13 @@ public class PgVectorStoreService implements VectorStoreService {
     private static final Logger log = LoggerFactory.getLogger(PgVectorStoreService.class);
 
     private final VectorStore vectorStore;
+    private final JdbcTemplate jdbcTemplate;
+    private final ObjectMapper objectMapper;
 
-    public PgVectorStoreService(VectorStore vectorStore) {
+    public PgVectorStoreService(VectorStore vectorStore, JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.vectorStore = vectorStore;
+        this.jdbcTemplate = jdbcTemplate;
+        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -48,16 +54,33 @@ public class PgVectorStoreService implements VectorStoreService {
     }
 
     @Override
-    public List<ScoredChunk> search(String query, int topK, double threshold) {
+    public List<ScoredChunk> search(float[] queryEmbedding, int topK, double threshold) {
         long start = System.currentTimeMillis();
-        SearchRequest request = SearchRequest.builder()
-                .query(query)
-                .topK(topK)
-                .similarityThreshold(threshold)
-                .build();
+        String vectorStr = toVectorString(queryEmbedding);
 
-        List<Document> docs = vectorStore.similaritySearch(request);
-        List<ScoredChunk> results = docs.stream().map(this::toScoredChunk).toList();
+        String sql = "SELECT id, content, metadata::text, " +
+                "1 - (embedding <=> CAST(? AS vector)) AS score " +
+                "FROM vector_store " +
+                "WHERE 1 - (embedding <=> CAST(? AS vector)) >= ? " +
+                "ORDER BY embedding <=> CAST(? AS vector) " +
+                "LIMIT ?";
+
+        List<ScoredChunk> results = jdbcTemplate.query(sql, (rs, rowNum) -> {
+            String id = rs.getString("id");
+            String content = rs.getString("content");
+            Map<String, Object> metaRaw = parseMetadata(rs.getString("metadata"));
+            BigDecimal score = BigDecimal.valueOf(rs.getDouble("score"));
+
+            Map<String, String> meta = metaRaw.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> String.valueOf(e.getValue())));
+
+            String chunkId = Objects.nonNull(metaRaw.get("chunkId")) ? String.valueOf(metaRaw.get("chunkId")) : id;
+            int chunkIndex = parseIntOrZero(metaRaw.get("chunkIndex"));
+            int tokenCount = parseIntOrZero(metaRaw.get("tokenCount"));
+
+            DocumentChunk chunk = new DocumentChunk(chunkId, content, chunkIndex, tokenCount, meta);
+            return new ScoredChunk(chunk, score);
+        }, vectorStr, vectorStr, threshold, vectorStr, topK);
 
         BigDecimal minScore = results.stream().map(ScoredChunk::similarityScore).min(Comparator.naturalOrder()).orElse(BigDecimal.ZERO);
         BigDecimal maxScore = results.stream().map(ScoredChunk::similarityScore).max(Comparator.naturalOrder()).orElse(BigDecimal.ZERO);
@@ -130,6 +153,27 @@ public class PgVectorStoreService implements VectorStoreService {
         return summaries;
     }
 
+    private String toVectorString(float[] embedding) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < embedding.length; i++) {
+            if (i > 0) sb.append(',');
+            sb.append(embedding[i]);
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> parseMetadata(String metadataJson) {
+        if (Objects.isNull(metadataJson) || metadataJson.isBlank()) return Map.of();
+        try {
+            return objectMapper.readValue(metadataJson, Map.class);
+        } catch (Exception e) {
+            log.warn("Failed to parse metadata JSON: {}", e.getMessage());
+            return Map.of();
+        }
+    }
+
     private Document toDocument(EmbeddedChunk embedded) {
         DocumentChunk chunk = embedded.chunk();
         Map<String, Object> meta = new HashMap<>(chunk.metadata());
@@ -146,22 +190,6 @@ public class PgVectorStoreService implements VectorStoreService {
                 .text(chunk.content())
                 .metadata(meta)
                 .build();
-    }
-
-    private ScoredChunk toScoredChunk(Document doc) {
-        Map<String, String> meta = doc.getMetadata().entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> String.valueOf(e.getValue())
-                ));
-
-        String chunkId = (String) doc.getMetadata().getOrDefault("chunkId", doc.getId());
-        int chunkIndex = parseIntOrZero(doc.getMetadata().get("chunkIndex"));
-        int tokenCount = parseIntOrZero(doc.getMetadata().get("tokenCount"));
-        BigDecimal score = Objects.nonNull(doc.getScore()) ? BigDecimal.valueOf(doc.getScore()) : BigDecimal.ZERO;
-
-        DocumentChunk chunk = new DocumentChunk(chunkId, doc.getText(), chunkIndex, tokenCount, meta);
-        return new ScoredChunk(chunk, score);
     }
 
     private int parseIntOrZero(Object value) {

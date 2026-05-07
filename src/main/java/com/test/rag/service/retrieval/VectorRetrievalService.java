@@ -2,6 +2,7 @@ package com.test.rag.service.retrieval;
 
 import com.test.rag.config.RagProperties;
 import com.test.rag.model.ScoredChunk;
+import com.test.rag.service.queryembedding.QueryEmbeddingService;
 import com.test.rag.service.vectorstore.VectorStoreService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +17,13 @@ public class VectorRetrievalService implements RetrievalService {
 
     private final VectorStoreService vectorStoreService;
     private final RagProperties props;
+    private final QueryEmbeddingService queryEmbeddingService;
 
-    public VectorRetrievalService(VectorStoreService vectorStoreService, RagProperties props) {
+    public VectorRetrievalService(VectorStoreService vectorStoreService, RagProperties props,
+                                   QueryEmbeddingService queryEmbeddingService) {
         this.vectorStoreService = vectorStoreService;
         this.props = props;
+        this.queryEmbeddingService = queryEmbeddingService;
     }
 
     @Override
@@ -32,7 +36,8 @@ public class VectorRetrievalService implements RetrievalService {
         int topK = props.getTopK();
         double threshold = props.getMinSimilarity().doubleValue();
 
-        List<ScoredChunk> results = vectorStoreService.search(userQuery, topK, threshold);
+        float[] embedding = queryEmbeddingService.embed(userQuery);
+        List<ScoredChunk> results = vectorStoreService.search(embedding, topK, threshold);
 
         log.info("Retrieve query='{}' topK={} returned={} scores={}",
                 userQuery,
