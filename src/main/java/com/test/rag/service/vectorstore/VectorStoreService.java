@@ -4,6 +4,7 @@ import com.test.rag.model.DocumentSummary;
 import com.test.rag.model.EmbeddedChunk;
 import com.test.rag.model.ScoredChunk;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -16,7 +17,7 @@ public interface VectorStoreService {
     /**
      * Searches the vector store using a pre-normalized L2 embedding.
      */
-    List<ScoredChunk> search(float[] queryEmbedding, int topK, double threshold);
+    List<ScoredChunk> search(float[] queryEmbedding, int topK, BigDecimal threshold);
 
     /**
      * Deletes all chunks belonging to the given source ID atomically.

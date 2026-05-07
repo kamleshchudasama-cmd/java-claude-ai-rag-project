@@ -40,6 +40,8 @@ public class EmbeddingBatchProcessor {
         EmbeddingResponse response;
         try {
             response = embeddingModel.embedForResponse(texts);
+        } catch (HttpClientErrorException.TooManyRequests | ResourceAccessException e) {
+            throw e;  // let Spring Retry intercept
         } catch (RuntimeException e) {
             throw new EmbeddingException("Embedding API call failed for batch of " + batch.size(), e);
         }

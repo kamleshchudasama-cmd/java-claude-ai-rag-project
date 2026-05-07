@@ -1,5 +1,6 @@
 package com.test.rag.service.vectorstore;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.test.rag.model.DocumentChunk;
 import com.test.rag.model.DocumentSummary;
@@ -54,7 +55,7 @@ public class PgVectorStoreService implements VectorStoreService {
     }
 
     @Override
-    public List<ScoredChunk> search(float[] queryEmbedding, int topK, double threshold) {
+    public List<ScoredChunk> search(float[] queryEmbedding, int topK, BigDecimal threshold) {
         long start = System.currentTimeMillis();
         String vectorStr = toVectorString(queryEmbedding);
 
@@ -80,7 +81,7 @@ public class PgVectorStoreService implements VectorStoreService {
 
             DocumentChunk chunk = new DocumentChunk(chunkId, content, chunkIndex, tokenCount, meta);
             return new ScoredChunk(chunk, score);
-        }, vectorStr, vectorStr, threshold, vectorStr, topK);
+        }, vectorStr, vectorStr, threshold.doubleValue(), vectorStr, topK);
 
         BigDecimal minScore = results.stream().map(ScoredChunk::similarityScore).min(Comparator.naturalOrder()).orElse(BigDecimal.ZERO);
         BigDecimal maxScore = results.stream().map(ScoredChunk::similarityScore).max(Comparator.naturalOrder()).orElse(BigDecimal.ZERO);
@@ -96,10 +97,16 @@ public class PgVectorStoreService implements VectorStoreService {
     @Override
     @Transactional
     public boolean deleteBySource(String sourceId) {
+        Integer count = jdbcTemplate.queryForObject(
+            "SELECT COUNT(*) FROM vector_store WHERE metadata->>'source_id' = ?",
+            Integer.class, sourceId);
+        if (Objects.isNull(count) || count == 0) {
+            return false;
+        }
         FilterExpressionBuilder b = new FilterExpressionBuilder();
         Filter.Expression filter = b.eq("source_id", sourceId).build();
         vectorStore.delete(filter);
-        log.info("deleteBySource: issued filter-based delete for sourceId='{}'", sourceId);
+        log.info("deleteBySource: deleted {} chunks for sourceId='{}'", count, sourceId);
         return true;
     }
 
@@ -168,7 +175,7 @@ public class PgVectorStoreService implements VectorStoreService {
         if (Objects.isNull(metadataJson) || metadataJson.isBlank()) return Map.of();
         try {
             return objectMapper.readValue(metadataJson, Map.class);
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
             log.warn("Failed to parse metadata JSON: {}", e.getMessage());
             return Map.of();
         }

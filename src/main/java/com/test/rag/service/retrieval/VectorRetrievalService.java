@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -34,7 +35,7 @@ public class VectorRetrievalService implements RetrievalService {
         }
 
         int topK = props.getTopK();
-        double threshold = props.getMinSimilarity().doubleValue();
+        BigDecimal threshold = props.getMinSimilarity();
 
         float[] embedding = queryEmbeddingService.embed(userQuery);
         List<ScoredChunk> results = vectorStoreService.search(embedding, topK, threshold);

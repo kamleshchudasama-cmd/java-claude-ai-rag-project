@@ -78,7 +78,7 @@ class PgVectorStoreServiceTest {
         when(jdbcTemplate.query(any(String.class), any(RowMapper.class), any(), any(), any(), any(), any()))
                 .thenReturn(List.of());
 
-        List<ScoredChunk> result = service.search(new float[]{0.1f, 0.2f}, 5, 0.75);
+        List<ScoredChunk> result = service.search(new float[]{0.1f, 0.2f}, 5, BigDecimal.valueOf(0.75));
 
         assertThat(result).isEmpty();
     }
@@ -92,7 +92,7 @@ class PgVectorStoreServiceTest {
         when(jdbcTemplate.query(any(String.class), any(RowMapper.class), any(), any(), any(), any(), any()))
                 .thenReturn(List.of(scoredChunk));
 
-        List<ScoredChunk> result = service.search(new float[]{0.1f, 0.2f}, 5, 0.75);
+        List<ScoredChunk> result = service.search(new float[]{0.1f, 0.2f}, 5, BigDecimal.valueOf(0.75));
 
         assertThat(result).hasSize(1);
         assertThat(result.get(0).similarityScore()).isEqualTo(BigDecimal.valueOf(0.92));
@@ -107,40 +107,61 @@ class PgVectorStoreServiceTest {
                 .thenReturn(List.of());
         ArgumentCaptor<Object[]> paramsCaptor = ArgumentCaptor.captor();
 
-        service.search(new float[]{0.1f, 0.2f}, 3, 0.8);
+        service.search(new float[]{0.1f, 0.2f}, 3, BigDecimal.valueOf(0.8));
 
         verify(jdbcTemplate).query(any(String.class), any(RowMapper.class),
                 paramsCaptor.capture());
         Object[] params = paramsCaptor.getValue();
-        // params: vectorStr, vectorStr, threshold, vectorStr, topK
+        // params: vectorStr, vectorStr, threshold.doubleValue(), vectorStr, topK
         assertThat(params[2]).isEqualTo(0.8);
         assertThat(params[4]).isEqualTo(3);
     }
 
     @Test
     void deleteBySource_callsFilterBasedDeleteWithSourceId() {
-        // Filter-based delete — no similarity search needed; always calls delete(Filter.Expression)
+        // Stub the count query to return 1 (chunks exist) so delete proceeds
+        when(jdbcTemplate.queryForObject(any(String.class), eq(Integer.class), any()))
+                .thenReturn(1);
         ArgumentCaptor<Filter.Expression> filterCaptor = ArgumentCaptor.captor();
 
-        service.deleteBySource("missing.pdf");
+        service.deleteBySource("source-123");
 
         verify(vectorStore, never()).delete(anyList());
         verify(vectorStore).delete(filterCaptor.capture());
-        // The captured filter should encode the eq("source_id", "missing.pdf") expression
+        // The captured filter should encode the eq("source_id", "source-123") expression
         assertThat(filterCaptor.getValue()).isNotNull();
     }
 
     @Test
-    void deleteBySource_alwaysInvokesFilterDelete_regardlessOfStoredChunks() {
-        // With filter-based delete, the VectorStore handles absence gracefully
-        // — no similarity search pre-check needed
-        ArgumentCaptor<Filter.Expression> filterCaptor = ArgumentCaptor.captor();
+    void deleteBySource_returnsFalse_whenNoChunksExist() {
+        when(jdbcTemplate.queryForObject(any(String.class), eq(Integer.class), any()))
+                .thenReturn(0);
+
+        boolean result = service.deleteBySource("missing.pdf");
+
+        assertThat(result).isFalse();
+        verify(vectorStore, never()).delete(any(Filter.Expression.class));
+    }
+
+    @Test
+    void deleteBySource_returnsTrue_whenChunksExist() {
+        when(jdbcTemplate.queryForObject(any(String.class), eq(Integer.class), any()))
+                .thenReturn(3);
+
+        boolean result = service.deleteBySource("report.pdf");
+
+        assertThat(result).isTrue();
+        verify(vectorStore).delete(any(Filter.Expression.class));
+    }
+
+    @Test
+    void deleteBySource_doesNotCallSimilaritySearch() {
+        when(jdbcTemplate.queryForObject(any(String.class), eq(Integer.class), any()))
+                .thenReturn(2);
 
         service.deleteBySource("report.pdf");
 
         verify(vectorStore, never()).similaritySearch(any(SearchRequest.class));
-        verify(vectorStore).delete(filterCaptor.capture());
-        assertThat(filterCaptor.getValue()).isNotNull();
     }
 
     @Test
@@ -149,7 +170,7 @@ class PgVectorStoreServiceTest {
         when(jdbcTemplate.query(any(String.class), any(RowMapper.class), any(), any(), any(), any(), any()))
                 .thenReturn(List.of());
 
-        service.search(new float[]{0.1f, 0.2f}, 5, 0.75);
+        service.search(new float[]{0.1f, 0.2f}, 5, BigDecimal.valueOf(0.75));
 
         verify(vectorStore, never()).similaritySearch(any(SearchRequest.class));
     }

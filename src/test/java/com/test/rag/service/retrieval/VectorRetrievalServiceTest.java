@@ -19,7 +19,6 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
@@ -50,7 +49,7 @@ class VectorRetrievalServiceTest {
 
     @Test
     void retrieve_noResults_returnsEmptyList() {
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of());
 
         List<ScoredChunk> result = service.retrieve("What is AI?");
@@ -61,7 +60,7 @@ class VectorRetrievalServiceTest {
     @Test
     void retrieve_singleResult_returnsSingleScoredChunk() {
         ScoredChunk chunk = scoredChunk("chunk-1", "AI is transformative", 0.91);
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of(chunk));
 
         List<ScoredChunk> result = service.retrieve("What is AI?");
@@ -77,7 +76,7 @@ class VectorRetrievalServiceTest {
                 scoredChunk("chunk-2", "Second result", 0.88),
                 scoredChunk("chunk-3", "Third result", 0.81)
         );
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(chunks);
 
         List<ScoredChunk> result = service.retrieve("Tell me about AI");
@@ -91,7 +90,7 @@ class VectorRetrievalServiceTest {
 
     @Test
     void retrieve_callsQueryEmbeddingServiceWithExactQuery() {
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of());
 
         service.retrieve("What is machine learning?");
@@ -102,7 +101,7 @@ class VectorRetrievalServiceTest {
     @Test
     void retrieve_queryWithSpecialCharacters_embeddedAsIs() {
         String query = "What's the #1 use-case? (AI/ML & NLP)";
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of());
 
         service.retrieve(query);
@@ -113,7 +112,7 @@ class VectorRetrievalServiceTest {
     @Test
     void retrieve_queryWithLeadingAndTrailingSpaces_embeddedAsIs() {
         String query = "  neural networks  ";
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of());
 
         service.retrieve(query);
@@ -127,78 +126,78 @@ class VectorRetrievalServiceTest {
 
     @Test
     void retrieve_usesDefaultTopKFromProperties() {
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of());
         ArgumentCaptor<Integer> topKCaptor = ArgumentCaptor.captor();
 
         service.retrieve("query");
 
-        verify(vectorStoreService).search(any(float[].class), topKCaptor.capture(), anyDouble());
+        verify(vectorStoreService).search(any(float[].class), topKCaptor.capture(), any(BigDecimal.class));
         assertThat(topKCaptor.getValue()).isEqualTo(5);
     }
 
     @Test
     void retrieve_usesDefaultThresholdFromProperties() {
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of());
-        ArgumentCaptor<Double> thresholdCaptor = ArgumentCaptor.captor();
+        ArgumentCaptor<BigDecimal> thresholdCaptor = ArgumentCaptor.captor();
 
         service.retrieve("query");
 
         verify(vectorStoreService).search(any(float[].class), anyInt(), thresholdCaptor.capture());
-        assertThat(thresholdCaptor.getValue()).isEqualTo(0.75);
+        assertThat(thresholdCaptor.getValue()).isEqualByComparingTo(new BigDecimal("0.75"));
     }
 
     @Test
     void retrieve_customTopK_passedToVectorStore() {
         props.setTopK(10);
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of());
         ArgumentCaptor<Integer> topKCaptor = ArgumentCaptor.captor();
 
         service.retrieve("query");
 
-        verify(vectorStoreService).search(any(float[].class), topKCaptor.capture(), anyDouble());
+        verify(vectorStoreService).search(any(float[].class), topKCaptor.capture(), any(BigDecimal.class));
         assertThat(topKCaptor.getValue()).isEqualTo(10);
     }
 
     @Test
     void retrieve_customThreshold_passedToVectorStore() {
         props.setMinSimilarity(new BigDecimal("0.90"));
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of());
-        ArgumentCaptor<Double> thresholdCaptor = ArgumentCaptor.captor();
+        ArgumentCaptor<BigDecimal> thresholdCaptor = ArgumentCaptor.captor();
 
         service.retrieve("query");
 
         verify(vectorStoreService).search(any(float[].class), anyInt(), thresholdCaptor.capture());
-        assertThat(thresholdCaptor.getValue()).isEqualTo(0.90);
+        assertThat(thresholdCaptor.getValue()).isEqualByComparingTo(new BigDecimal("0.90"));
     }
 
     @Test
     void retrieve_topK1_passesSingleResultLimit() {
         props.setTopK(1);
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of(scoredChunk("chunk-1", "Only result", 0.92)));
         ArgumentCaptor<Integer> topKCaptor = ArgumentCaptor.captor();
 
         service.retrieve("query");
 
-        verify(vectorStoreService).search(any(float[].class), topKCaptor.capture(), anyDouble());
+        verify(vectorStoreService).search(any(float[].class), topKCaptor.capture(), any(BigDecimal.class));
         assertThat(topKCaptor.getValue()).isEqualTo(1);
     }
 
     @Test
     void retrieve_thresholdZero_passesZeroToVectorStore() {
         props.setMinSimilarity(BigDecimal.ZERO);
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of());
-        ArgumentCaptor<Double> thresholdCaptor = ArgumentCaptor.captor();
+        ArgumentCaptor<BigDecimal> thresholdCaptor = ArgumentCaptor.captor();
 
         service.retrieve("query");
 
         verify(vectorStoreService).search(any(float[].class), anyInt(), thresholdCaptor.capture());
-        assertThat(thresholdCaptor.getValue()).isEqualTo(0.0);
+        assertThat(thresholdCaptor.getValue()).isEqualByComparingTo(BigDecimal.ZERO);
     }
 
     // -------------------------------------------------------------------------
@@ -210,7 +209,7 @@ class VectorRetrievalServiceTest {
         ScoredChunk first  = scoredChunk("chunk-1", "High score result",   0.95);
         ScoredChunk second = scoredChunk("chunk-2", "Medium score result", 0.85);
         ScoredChunk third  = scoredChunk("chunk-3", "Lower score result",  0.77);
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of(first, second, third));
 
         List<ScoredChunk> result = service.retrieve("query");
@@ -223,7 +222,7 @@ class VectorRetrievalServiceTest {
     @Test
     void retrieve_similarityScoresAreNotModified() {
         ScoredChunk chunk = scoredChunk("chunk-1", "Some content", 0.876);
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of(chunk));
 
         List<ScoredChunk> result = service.retrieve("query");
@@ -238,7 +237,7 @@ class VectorRetrievalServiceTest {
                 Map.of("filename", "report.pdf", "chunk_index", "3")
         );
         ScoredChunk scored = new ScoredChunk(originalChunk, BigDecimal.valueOf(0.91));
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenReturn(List.of(scored));
 
         List<ScoredChunk> result = service.retrieve("query");
@@ -257,7 +256,7 @@ class VectorRetrievalServiceTest {
 
     @Test
     void retrieve_vectorStoreThrowsRuntimeException_propagatesToCaller() {
-        when(vectorStoreService.search(any(float[].class), anyInt(), anyDouble()))
+        when(vectorStoreService.search(any(float[].class), anyInt(), any(BigDecimal.class)))
                 .thenThrow(new RuntimeException("DB connection lost"));
 
         assertThatThrownBy(() -> service.retrieve("query"))
