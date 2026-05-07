@@ -2,6 +2,7 @@ import { Component, DestroyRef, OnInit, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDialog } from '@angular/material/dialog';
 import { DocumentsService } from './documents.service';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
@@ -9,7 +10,7 @@ import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dial
 @Component({
   selector: 'app-documents',
   standalone: true,
-  imports: [MatButtonModule, MatIconModule],
+  imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule],
   templateUrl: './documents.component.html',
   styleUrl: './documents.component.scss'
 })
@@ -18,22 +19,17 @@ export class DocumentsComponent implements OnInit {
   private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
 
-  deleteError = '';
-
   ngOnInit(): void {
     this.documentsService.load();
   }
 
   confirmDelete(sourceId: string, filename: string): void {
-    this.deleteError = '';
     this.dialog.open(ConfirmDialogComponent, { data: { filename } })
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(confirmed => {
         if (confirmed) {
-          this.documentsService.delete(sourceId, () => {
-            this.deleteError = 'Failed to delete. Try again.';
-          });
+          this.documentsService.delete(sourceId);
         }
       });
   }

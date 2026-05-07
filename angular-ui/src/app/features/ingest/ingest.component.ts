@@ -10,7 +10,9 @@ export type UploadState = 'idle' | 'fileSelected' | 'uploading';
 const ALLOWED_TYPES = [
   'application/pdf',
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'text/html'
+  'text/html',
+  'text/markdown',
+  'text/x-markdown'
 ];
 const MAX_BYTES = 50 * 1024 * 1024;
 
@@ -85,7 +87,7 @@ export class IngestComponent {
 
   private setFile(file: File): void {
     if (!ALLOWED_TYPES.includes(file.type)) {
-      this.errorMessage = `Unsupported file type: "${file.type || 'unknown'}". Use PDF, DOCX, or HTML.`;
+      this.errorMessage = `Unsupported file type: "${file.type || 'unknown'}". Use PDF, DOCX, HTML, or MD.`;
       return;
     }
     if (file.size > MAX_BYTES) {
@@ -102,6 +104,7 @@ export class IngestComponent {
     if (type.includes('pdf')) return 'picture_as_pdf';
     if (type.includes('word')) return 'description';
     if (type.includes('html')) return 'code';
+    if (type.includes('markdown')) return 'article';
     return 'insert_drive_file';
   }
 
@@ -109,6 +112,7 @@ export class IngestComponent {
     if (type.includes('pdf')) return 'PDF';
     if (type.includes('word')) return 'DOCX';
     if (type.includes('html')) return 'HTML';
+    if (type.includes('markdown')) return 'MD';
     return 'File';
   }
 

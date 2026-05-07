@@ -1,0 +1,76 @@
+<h2>Ingest Page — How should file upload work?</h2>
+<p class="subtitle">Accepts PDF, DOCX, HTML up to 50 MB. Which upload experience fits?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:220px;background:#f5f5f5;border-radius:6px;gap:10px;font-size:12px;">
+        <div style="border:2px dashed #bbb;border-radius:8px;padding:30px 40px;text-align:center;background:#fff;color:#666;">
+          <div style="font-size:28px;margin-bottom:6px;">📁</div>
+          <div style="font-weight:500;margin-bottom:4px;">Drop file here</div>
+          <div style="font-size:10px;color:#999;margin-bottom:10px;">PDF · DOCX · HTML · up to 50 MB</div>
+          <div class="mock-button" style="font-size:11px;padding:5px 14px;">Or browse…</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Drop zone only</h3>
+      <p>Large drag-and-drop target. File uploads immediately on drop/select. Status message replaces the zone during upload. Simple, one-step.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;flex-direction:column;height:220px;background:#f5f5f5;border-radius:6px;overflow:hidden;font-size:12px;gap:8px;padding:10px;">
+        <div style="border:2px dashed #bbb;border-radius:8px;padding:14px;text-align:center;background:#fff;color:#666;flex-shrink:0;">
+          <div style="font-size:20px;margin-bottom:4px;">📁</div>
+          <div style="font-size:11px;">Drop file or <span style="color:#3f51b5;text-decoration:underline;">browse</span></div>
+        </div>
+        <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:8px;display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          <div style="font-size:20px;">📄</div>
+          <div style="flex:1;">
+            <div style="font-weight:500;font-size:11px;">spring-ai-docs.pdf</div>
+            <div style="font-size:10px;color:#888;">2.4 MB · PDF</div>
+          </div>
+          <div style="font-size:10px;color:#999;">✕</div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;flex-shrink:0;">
+          <div class="mock-button" style="font-size:11px;padding:5px 14px;">Upload</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Drop zone + file preview card</h3>
+      <p>After selecting, a preview card shows filename, size, and type. User confirms with an Upload button. Lets you catch the wrong file before sending.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;flex-direction:column;height:220px;background:#f5f5f5;border-radius:6px;overflow:hidden;font-size:12px;gap:8px;padding:10px;">
+        <div style="border:2px dashed #bbb;border-radius:8px;padding:12px;text-align:center;background:#fff;color:#666;flex-shrink:0;">
+          <div style="font-size:18px;margin-bottom:3px;">📁</div>
+          <div style="font-size:10px;">Drop file or <span style="color:#3f51b5;text-decoration:underline;">browse</span></div>
+        </div>
+        <div style="background:#fff;border:1px solid #ddd;border-radius:6px;padding:6px 8px;">
+          <div style="font-size:10px;font-weight:600;color:#555;margin-bottom:4px;">Recently ingested</div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;padding:2px 0;border-bottom:1px solid #f0f0f0;">
+            <span>spring-ai.pdf</span><span style="color:#4caf50;">✓ done</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;padding:2px 0;">
+            <span>readme.docx</span><span style="color:#4caf50;">✓ done</span>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;flex-shrink:0;">
+          <div class="mock-button" style="font-size:11px;padding:5px 14px;">Upload</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Drop zone + recent uploads list</h3>
+      <p>Upload zone at top, recent ingestion history below. Shows what's already in the system. Good for batch workflows — but duplicates what the Documents page already shows.</p>
+    </div>
+  </div>
+
+</div>

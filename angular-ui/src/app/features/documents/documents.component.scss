@@ -27,6 +27,12 @@
   margin-bottom: 12px;
 }
 
+.loading-state {
+  display: flex;
+  justify-content: center;
+  margin-top: 80px;
+}
+
 .empty-state {
   color: rgba(0, 0, 0, 0.4);
   text-align: center;

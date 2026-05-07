@@ -7,11 +7,15 @@
   @if (documentsService.error()) {
     <div class="alert-strip">{{ documentsService.error() }}</div>
   }
-  @if (deleteError) {
-    <div class="alert-strip">{{ deleteError }}</div>
+  @if (documentsService.deleteError()) {
+    <div class="alert-strip">{{ documentsService.deleteError() }}</div>
   }
 
-  @if (documentsService.documents().length === 0 && !documentsService.error()) {
+  @if (documentsService.isLoading()) {
+    <div class="loading-state">
+      <mat-spinner diameter="36" />
+    </div>
+  } @else if (documentsService.documents().length === 0 && !documentsService.error()) {
     <p class="empty-state">No documents ingested yet. Use the Ingest page to add files.</p>
   }
 
@@ -28,6 +32,7 @@
           </div>
         </div>
         <button mat-stroked-button color="warn"
+          [attr.aria-label]="'Delete ' + doc.filename"
           (click)="confirmDelete(doc.sourceId, doc.filename)">
           Delete
         </button>

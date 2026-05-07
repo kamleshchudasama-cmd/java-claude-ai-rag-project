@@ -10,6 +10,8 @@ describe('ChatService', () => {
     service = TestBed.inject(ChatService);
   });
 
+  afterEach(() => service.reset());
+
   it('addUserMessage appends a user message', () => {
     service.addUserMessage('Hello');
     expect(service.messages()).toEqual([{ role: 'user', text: 'Hello' }]);

@@ -11,10 +11,10 @@ similarity, and generates cited answers via gpt-4o-mini through Spring AI.
 ---
 
 ## Stack & Versions
-    Framework           Spring Boot                  3.3.x
+    Framework           Spring Boot                  3.3.4
     AI Abstraction      Spring AI                    1.0.0
     Vector Store        PGVector on PostgreSQL        pg 16, pgvector 0.7.x
-    Document Parsing    Apache Tika                  2.9.x
+    Document Parsing    Apache Tika                  2.9.2
     Embeddings          OpenAI text-embedding-3-small  via Spring AI (1536 dims)
     Generation          OpenAI gpt-4o-mini             via Spring AI
     Build               Maven                        3.9.x
@@ -24,32 +24,32 @@ similarity, and generates cited answers via gpt-4o-mini through Spring AI.
 
 ## Maven Build Commands
 ```bash
-mvn clean install                  # full build
-mvn spring-boot:run                # run locally
-mvn test                           # unit tests
-mvn test -Dtest=IntegrationTests   # integration tests only
-mvn dependency:tree                # inspect dependency graph
-mvn versions:display-dependency-updates  # check for updates
+mvn clean install                         # full build
+mvn spring-boot:run                       # run locally
+mvn test                                  # all tests
+mvn test -Dtest=ClassName                 # single test class
+mvn test -Dtest=ClassName#methodName      # single test method
+mvn dependency:tree                       # inspect dependency graph
+mvn versions:display-dependency-updates   # check for updates
 ```
 
 ---
 
-## PGVector Docker Setup
+## PGVector Setup
+Preferred: use `docker-compose.yml` (port **5433** on host):
 ```bash
-# Start PGVector
+docker compose up -d
+```
+
+Manual (also port 5433):
+```bash
 docker run -d \
   --name pgvector \
   -e POSTGRES_USER=rag \
   -e POSTGRES_PASSWORD=rag \
   -e POSTGRES_DB=ragdb \
-  -p 5432:5432 \
+  -p 5433:5432 \
   pgvector/pgvector:pg16
-
-# Verify extension
-docker exec -it pgvector psql -U rag -d ragdb -c "CREATE EXTENSION IF NOT EXISTS vector;"
-
-# Check vector table
-docker exec -it pgvector psql -U rag -d ragdb -c "\d vector_store"
 ```
 
 Spring AI auto-creates the `vector_store` table on startup when
@@ -59,141 +59,216 @@ Spring AI auto-creates the `vector_store` table on startup when
 
 ## Environment Variables (never hardcode values)
 ```bash
-# OpenAI
 OPENAI_API_KEY=...
-
-# PostgreSQL
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/ragdb
+SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5433/ragdb
 SPRING_DATASOURCE_USERNAME=rag
 SPRING_DATASOURCE_PASSWORD=rag
 ```
-Reference in `application.properties` as `${OPENAI_API_KEY}`, etc.
+Referenced in `application.properties` as `${OPENAI_API_KEY}`, etc.
 
 ---
 
 ## Spring AI Config Keys (application.properties)
-```yaml
-spring:
-  ai:
-    openai:
-      api-key: ${OPENAI_API_KEY}
-      chat:
-        options:
-          model: gpt-4o-mini
-      embedding:
-        options:
-          model: text-embedding-3-small
-    vectorstore:
-      pgvector:
-        initialize-schema: true
-        dimensions: 1536
-        distance-type: COSINE_DISTANCE
-        index-type: HNSW
+```properties
+spring.ai.openai.api-key=${OPENAI_API_KEY}
+spring.ai.openai.chat.options.model=gpt-4o-mini
+spring.ai.openai.embedding.options.model=text-embedding-3-small
+spring.ai.vectorstore.pgvector.initialize-schema=true
+spring.ai.vectorstore.pgvector.dimensions=1536
+spring.ai.vectorstore.pgvector.distance-type=COSINE_DISTANCE
+spring.ai.vectorstore.pgvector.index-type=HNSW
+spring.servlet.multipart.max-file-size=50MB
+spring.servlet.multipart.max-request-size=50MB
 ```
 
 ---
 
 ## Module Map
+Root package: `com.test.rag`
+
 ```
-src/main/java/com/yourorg/rag/
-├── service/
-│   ├── DocumentLoaderService.java    # Tika-based file ingestion
-│   ├── ChunkingService.java          # overlapping token-based splitting
-│   ├── EmbeddingService.java         # OpenAI embed via Spring AI
-│   ├── VectorStoreService.java       # PGVector read/write abstraction
-│   ├── QueryEmbeddingService.java    # embed user queries
-│   ├── RetrievalService.java         # cosine similarity top-k search
-│   ├── ContextBuilderService.java    # assemble grounded prompt
-│   └── GenerationService.java        # gpt-4o-mini call, return cited answer
+src/main/java/com/test/rag/
 ├── config/
-│   ├── SpringAiConfig.java           # bean wiring for AI clients
-│   └── RagProperties.java            # @ConfigurationProperties POJO
-├── model/
-│   ├── DocumentChunk.java
-│   └── RagResponse.java
+│   ├── SpringAiConfig.java               # ChatClient + EmbeddingModel bean wiring
+│   └── RagProperties.java                # @ConfigurationProperties — all RAG tuning params
 ├── controller/
-│   └── RagController.java            # REST endpoints
-└── RagApplication.java
+│   ├── RagController.java                # REST endpoints (see REST API below)
+│   └── GlobalExceptionHandler.java       # @RestControllerAdvice — catches RuntimeException → HTTP 500
+├── exception/
+│   ├── DocumentParseException.java
+│   ├── ChunkingException.java
+│   └── EmbeddingException.java
+├── model/                                # all are Java records (immutable)
+│   ├── ParsedDocument.java               # content, metadata Map, sourceId (SHA-256)
+│   ├── DocumentChunk.java                # chunkId (SHA-256), content, index, tokens, metadata
+│   ├── EmbeddedChunk.java                # chunk + float[] embedding (normalized)
+│   ├── ScoredChunk.java                  # chunk + double similarityScore
+│   ├── BuiltContext.java                 # systemPrompt, userMessage, List<Citation>
+│   ├── Citation.java                     # ref [N], filename, chunkIndex, score, chunkText
+│   ├── RagResponse.java                  # answer, citations, totalTokens
+│   └── DocumentSummary.java              # aggregated document metadata for listing
+└── service/                              # each sub-package has an interface + implementation
+    ├── loader/
+    │   ├── DocumentLoaderService.java
+    │   └── TikaDocumentLoaderService.java  # load(Path) + load(MultipartFile); sourceId = SHA-256(name+size)
+    ├── chunking/
+    │   ├── ChunkingService.java
+    │   └── RecursiveChunkingService.java   # paragraph → sentence → word; chunkId = SHA-256(sourceId+index)
+    ├── embedding/
+    │   ├── EmbeddingService.java
+    │   └── OpenAiEmbeddingService.java     # batch=32, L2-normalized, @Retryable(3×, 1 s delay)
+    ├── vectorstore/
+    │   ├── VectorStoreService.java
+    │   └── PgVectorStoreService.java       # upsert / search / deleteBySource(@Transactional) / listDocuments
+    ├── queryembedding/
+    │   ├── QueryEmbeddingService.java
+    │   └── OpenAiQueryEmbeddingService.java  # single-query embed, L2-normalized
+    ├── retrieval/
+    │   ├── RetrievalService.java
+    │   └── VectorRetrievalService.java     # calls QueryEmbeddingService → VectorStoreService.search()
+    ├── context/
+    │   ├── ContextBuilderService.java
+    │   └── PromptContextBuilderService.java  # loads prompts/rag-system.st, sorts by score, truncates to maxContextTokens
+    └── generation/
+        ├── GenerationService.java
+        └── OpenAiGenerationService.java    # ChatClient call, parses inline [N] citations, @Retryable(3×, 10 s delay)
+```
+
+Each `service/<sub-package>/` directory contains a `CLAUDE.md` with the contract,
+invariants, and expected test cases for that specific service.
+
+---
+
+## Pipeline Flows
+
+**Ingestion** (`POST /api/rag/ingest`):
+```
+MultipartFile
+  → TikaDocumentLoaderService.load()        → ParsedDocument
+  → RecursiveChunkingService.chunk()        → List<DocumentChunk>
+  → OpenAiEmbeddingService.embed()          → List<EmbeddedChunk>
+  → PgVectorStoreService.upsert()           → PGVector (idempotent via chunkId)
+```
+
+**Query** (`POST /api/rag/query?q=<question>`):
+```
+String question
+  → OpenAiQueryEmbeddingService.embed()     → float[]
+  → PgVectorStoreService.search()           → List<ScoredChunk>
+  → PromptContextBuilderService.build()     → BuiltContext (numbered citations)
+  → OpenAiGenerationService.generate()      → RagResponse (answer + citations)
 ```
 
 ---
 
-## Chunking Defaults
-    Chunk size          512 tokens
-    Overlap              50 tokens
-    Strategy            Recursive character split (paragraph → sentence → word)
-    Min chunk size      100 tokens (discard smaller)
+## REST API
+```
+POST   /api/rag/ingest              # multipart/form-data, field: file (≤50 MB)
+POST   /api/rag/query?q=<question>  # query param "q" → RagResponse JSON
+GET    /api/rag/documents           # → List<DocumentSummary>
+DELETE /api/rag/documents/{id}      # id = sourceId (SHA-256 hex); 204 or 404
+```
 
-All values in `RagProperties.java` — **never hardcode in service classes**.
+---
+
+## RagProperties — All Tunable Parameters
+All values live in `RagProperties.java` and are bound from `application.properties`
+under the `rag.*` prefix. **Never hardcode these in service classes.**
+
+| Property | Default | Purpose |
+|---|---|---|
+| `chunkSize` | 512 | Max tokens per chunk |
+| `chunkOverlap` | 50 | Token overlap between consecutive chunks |
+| `minChunkSize` | 50 | Discard chunks smaller than this |
+| `embeddingBatchSize` | 32 | Chunks per OpenAI embedding request |
+| `embeddingRequestDelayMs` | 0 | Delay between embedding batches (rate-limit buffer) |
+| `retrievalEnabled` | true | Kill-switch for retrieval step |
+| `topK` | 5 | Chunks returned from vector search |
+| `minSimilarity` | 0.75 (class) / 0.7 (application.properties) | Cosine similarity threshold (BigDecimal) |
+| `useMmr` | false | Enable Maximal Marginal Relevance re-ranking |
+| `temperature` | 0.2 | LLM temperature (BigDecimal) |
+| `maxOutputTokens` | 2048 | LLM max response length |
+| `maxContextTokens` | 4096 | Max tokens assembled into prompt context |
+| `maxContentChars` | 500,000 | Max document size accepted by loader |
+
+---
+
+## Retry Policies
+- **EmbeddingService**: `@Retryable`, maxAttempts=3, delay=1 000 ms (HTTP 429 / IOException)
+- **GenerationService**: `@Retryable`, maxAttempts=3, delay=10 000 ms (HTTP 429 / IOException)
+- Requires `spring-retry` + `spring-boot-starter-aop` on the classpath.
 
 ---
 
 ## Service Contracts (invariants — do not change without updating this file)
 
 1. **Never call the OpenAI API directly — always go through Spring AI abstraction.**
-   Use `ChatClient` bean, not raw HTTP or OpenAI SDK.
+   Use `ChatClient` bean for generation, `EmbeddingModel` bean for embeddings.
 
-2. **Never call the OpenAI Embeddings API directly — always use Spring AI's
-   `EmbeddingModel` bean.**
-
-3. `VectorStoreService` is the single point of contact with PGVector.
+2. `VectorStoreService` is the single point of contact with PGVector.
    No other service imports `VectorStore` or runs SQL directly.
 
-4. `RagProperties` is the single source of truth for all tuneable params
-   (chunk size, top-k, similarity threshold). Never read `@Value` for RAG params
-   outside this class.
+3. `RagProperties` is the single source of truth for all tuneable params.
+   Never use `@Value` for RAG params outside this class.
 
-5. All embedding calls must log: model name, input token count, latency.
+4. All embedding calls must log: model name, input token count, latency.
 
-6. All retrieval calls must log: query text, top-k count, similarity scores.
+5. All retrieval calls must log: query text, top-k count, similarity scores.
 
-7. `GenerationService` must include source document metadata in every response
+6. `GenerationService` must include source document metadata in every response
    (`RagResponse.citations`).
 
 ---
 
-## Key Dependencies (pom.xml excerpt)
-```xml
-<!-- Spring AI BOM -->
-<dependencyManagement>
-  <dependency>
-    <groupId>org.springframework.ai</groupId>
-    <artifactId>spring-ai-bom</artifactId>
-    <version>1.0.0</version>
-    <type>pom</type>
-    <scope>import</scope>
-  </dependency>
-</dependencyManagement>
+## Key Dependencies
+- `spring-ai-bom:1.0.0` (managed via `<dependencyManagement>`)
+- `spring-ai-starter-model-openai` — ChatClient + EmbeddingModel
+- `spring-ai-starter-vector-store-pgvector` — VectorStore (PGVector)
+- `spring-retry` + `spring-boot-starter-aop` — required for `@Retryable` on service impls
+- `tika-parsers-standard-package:2.9.2` — multi-format document parsing
 
-<!-- Core -->
-<dependency>org.springframework.ai:spring-ai-starter-model-openai</dependency>
-<dependency>org.springframework.ai:spring-ai-starter-vector-store-pgvector</dependency>
+`RagApplication` carries `@EnableRetry` — without it `@Retryable` annotations are silently ignored.
 
-<!-- Tika -->
-<dependency>
-  <groupId>org.apache.tika</groupId>
-  <artifactId>tika-parsers-standard-package</artifactId>
-  <version>2.9.2</version>
-</dependency>
-```
+---
+
+## Deployment
+- `docker-compose.yml` — starts PGVector (port 5433); preferred for local dev
+- `Dockerfile` — builds the application image for containerized deployment
+
+---
+
+## Architecture Reference
+`RAG-ARCHITECTURE.md` at the project root contains detailed data-flow diagrams and
+sequence diagrams for both ingestion and query pipelines. Consult it before making
+structural changes to the pipeline.
 
 ---
 
 ## Rules
 - Constructor injection only — no field or setter injection
 - No Lombok
-- All monetary values as `BigDecimal`, never `double` or `float`
-- always use Objects.nonNull or Objects.isNull when checking for null values
+- All monetary/threshold values as `BigDecimal`, never `double` or `float`
+- Always use `Objects.nonNull` / `Objects.isNull` for null checks
+- All data model types are Java records — keep them immutable
 
 ## Specs
 See `docs/specs/` — always check for an existing spec before implementing a feature.
+Each service sub-package has a corresponding spec file there.
+
+## Prompt Template
+`src/main/resources/prompts/rag-system.st` — Spring AI StringTemplate injected with
+`{context}` (numbered chunk references `[1]…[N]`). Edit here to change model instructions.
+
+## Evaluation
+`ragas-eval.py` + `src/main/resources/eval/eval-dataset.json` — offline RAGAS-based
+evaluation harness. Run against a live stack to measure faithfulness and answer relevance.
 
 ## What NOT to Do
 - Do not bypass Spring AI to call OpenAI APIs via raw HTTP
-- Do not put chunking params as magic numbers in `ChunkingService`
+- Do not put chunking params as magic numbers in service classes — use `RagProperties`
 - Do not run PGVector SQL outside `VectorStoreService`
 - Do not change embedding dimensions without reindexing the vector table
 - Do not add blocking calls inside reactive/async chains
-- Catch `Exception` directly — use specific exception types
-- Apply `@Transactional` on private methods
-- Hardcode environment config — use `application.properties` / environment variables
+- Do not catch `Exception` directly — use specific types (`DocumentParseException`, `ChunkingException`, `EmbeddingException`)
+- Do not apply `@Transactional` on private methods
+- Do not hardcode environment config — use `application.properties` / environment variables

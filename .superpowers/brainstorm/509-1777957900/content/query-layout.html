@@ -1,0 +1,78 @@
+<h2>Query Page — Which layout feels right?</h2>
+<p class="subtitle">The chat interface is the core of the app. How should it be arranged?</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;flex-direction:column;height:240px;background:#f5f5f5;border-radius:6px;overflow:hidden;font-size:12px;">
+        <div style="flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:6px;">
+          <div style="align-self:flex-end;background:#3f51b5;color:#fff;border-radius:12px 12px 2px 12px;padding:6px 10px;max-width:70%;">What is Spring AI?</div>
+          <div style="align-self:flex-start;background:#fff;border:1px solid #ddd;border-radius:2px 12px 12px 12px;padding:6px 10px;max-width:80%;">Spring AI is a framework for building AI applications... <span style="font-size:10px;color:#3f51b5;">[1] [2]</span></div>
+          <div style="align-self:flex-start;background:#f3f3f3;border-radius:4px;padding:4px 8px;font-size:10px;color:#666;border-left:3px solid #3f51b5;">[1] spring-ai-docs.pdf · 0.92 ▾</div>
+        </div>
+        <div style="background:#fff;border-top:1px solid #ddd;padding:8px;display:flex;gap:6px;align-items:center;">
+          <div class="mock-input" style="flex:1;font-size:11px;">Ask a question…</div>
+          <div class="mock-button" style="padding:5px 10px;font-size:11px;">Send</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Inline citations</h3>
+      <p>Citations expand inline below each assistant reply. Single-column, full-width chat. Clean and focused — everything in one scrollable column.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;height:240px;background:#f5f5f5;border-radius:6px;overflow:hidden;font-size:12px;">
+        <div style="flex:1;display:flex;flex-direction:column;border-right:1px solid #ddd;">
+          <div style="flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:6px;">
+            <div style="align-self:flex-end;background:#3f51b5;color:#fff;border-radius:12px 12px 2px 12px;padding:6px 10px;">What is Spring AI?</div>
+            <div style="align-self:flex-start;background:#fff;border:1px solid #ddd;border-radius:2px 12px 12px 12px;padding:6px 10px;cursor:pointer;">Spring AI is a framework… <span style="font-size:10px;color:#3f51b5;">[1][2]</span></div>
+          </div>
+          <div style="background:#fff;border-top:1px solid #ddd;padding:6px;display:flex;gap:4px;">
+            <div class="mock-input" style="flex:1;font-size:10px;">Ask…</div>
+            <div class="mock-button" style="padding:4px 8px;font-size:10px;">Send</div>
+          </div>
+        </div>
+        <div style="width:180px;background:#fafafa;padding:8px;font-size:10px;">
+          <div style="font-weight:600;margin-bottom:6px;color:#555;">Sources</div>
+          <div style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:5px;margin-bottom:4px;border-left:3px solid #3f51b5;">[1] spring-ai.pdf<br><span style="color:#888;">score 0.92</span></div>
+          <div style="background:#fff;border:1px solid #ddd;border-radius:4px;padding:5px;border-left:3px solid #3f51b5;">[2] readme.md<br><span style="color:#888;">score 0.87</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Split pane</h3>
+      <p>Chat on the left, Sources panel on the right. Citations update each time the assistant replies. Best for deep research — sources always visible.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;flex-direction:column;height:240px;background:#f5f5f5;border-radius:6px;overflow:hidden;font-size:12px;">
+        <div style="flex:1;overflow:auto;padding:10px;display:flex;flex-direction:column;gap:6px;">
+          <div style="align-self:flex-end;background:#3f51b5;color:#fff;border-radius:12px 12px 2px 12px;padding:6px 10px;max-width:70%;">What is Spring AI?</div>
+          <div style="align-self:flex-start;background:#fff;border:1px solid #ddd;border-radius:2px 12px 12px 12px;padding:6px 10px;max-width:80%;">Spring AI is a framework for building AI applications…</div>
+        </div>
+        <div style="background:#fff;border-top:1px solid #ddd;padding:6px;font-size:10px;color:#555;">
+          <div style="font-weight:600;margin-bottom:4px;">Sources ▲ (click to expand)</div>
+          <div style="display:flex;gap:4px;">
+            <div style="background:#f0f2ff;border-radius:4px;padding:3px 6px;">[1] spring-ai.pdf 0.92</div>
+            <div style="background:#f0f2ff;border-radius:4px;padding:3px 6px;">[2] readme.md 0.87</div>
+          </div>
+        </div>
+        <div style="background:#fff;border-top:1px solid #eee;padding:6px;display:flex;gap:4px;">
+          <div class="mock-input" style="flex:1;font-size:10px;">Ask a question…</div>
+          <div class="mock-button" style="padding:4px 8px;font-size:10px;">Send</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Drawer citations</h3>
+      <p>Citations live in a collapsible drawer above the input. Chat stays clean; sources peek up from the bottom on demand. Compact for small screens.</p>
+    </div>
+  </div>
+
+</div>

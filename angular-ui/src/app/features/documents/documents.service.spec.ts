@@ -29,6 +29,17 @@ describe('DocumentsService', () => {
     expect(service.error()).toBeNull();
   });
 
+  it('isLoading is false after load() completes successfully', () => {
+    service.load();
+    expect(service.isLoading()).toBeFalse();
+  });
+
+  it('isLoading is false after load() fails', () => {
+    apiSpy.listDocuments.and.returnValue(throwError(() => new Error('500')));
+    service.load();
+    expect(service.isLoading()).toBeFalse();
+  });
+
   it('load sets error signal on API failure', () => {
     apiSpy.listDocuments.and.returnValue(throwError(() => new Error('500')));
     service.load();
@@ -38,16 +49,22 @@ describe('DocumentsService', () => {
   it('delete calls deleteDocument then refreshes the list', () => {
     apiSpy.deleteDocument.and.returnValue(of(undefined));
     service.load();
-    service.delete('abc123', () => {});
+    service.delete('abc123');
     expect(apiSpy.deleteDocument).toHaveBeenCalledWith('abc123');
     expect(apiSpy.listDocuments).toHaveBeenCalledTimes(2);
   });
 
-  it('delete calls onError callback on API failure', () => {
+  it('delete sets deleteError signal on API failure', () => {
     apiSpy.deleteDocument.and.returnValue(throwError(() => new Error('500')));
-    const onError = jasmine.createSpy('onError');
-    service.delete('abc123', onError);
-    expect(onError).toHaveBeenCalled();
+    service.delete('abc123');
+    expect(service.deleteError()).toBe('Failed to delete. Try again.');
+  });
+
+  it('delete clears deleteError before the API call', () => {
+    apiSpy.deleteDocument.and.returnValue(of(undefined));
+    apiSpy.listDocuments.and.returnValue(of([mockDoc]));
+    service.delete('abc123');
+    expect(service.deleteError()).toBe('');
   });
 
   it('load() clears a previous error when the subsequent request succeeds', () => {
@@ -67,14 +84,24 @@ describe('DocumentsService', () => {
 
     apiSpy.listDocuments.and.returnValue(of([mockDoc]));
     apiSpy.deleteDocument.and.returnValue(of(undefined));
-    service.delete('abc123', () => {});
+    service.delete('abc123');
     expect(service.error()).toBeNull();
     expect(service.documents()).toEqual([mockDoc]);
   });
 
-  it('delete() does not call load() when the API returns an error', () => {
+  it('delete() calls load() to revert the optimistic removal when the API returns an error', () => {
     apiSpy.deleteDocument.and.returnValue(throwError(() => new Error('500')));
-    service.delete('abc123', () => {});
-    expect(apiSpy.listDocuments).not.toHaveBeenCalled();
+    service.delete('abc123');
+    expect(apiSpy.listDocuments).toHaveBeenCalled();
+  });
+
+  it('load() clears deleteError after a previously failed delete', () => {
+    apiSpy.deleteDocument.and.returnValue(throwError(() => new Error('500')));
+    service.delete('abc123');
+    expect(service.deleteError()).toBe('Failed to delete. Try again.');
+
+    apiSpy.listDocuments.and.returnValue(of([mockDoc]));
+    service.load();
+    expect(service.deleteError()).toBe('');
   });
 });

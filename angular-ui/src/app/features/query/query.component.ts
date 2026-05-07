@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, ViewChild, inject } from '@angular/core';
+import { Component, DestroyRef, ElementRef, Injector, ViewChild, afterNextRender, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -29,6 +29,7 @@ export class QueryComponent {
   protected chatService = inject(ChatService);
   private ragApi = inject(RagApiService);
   private destroyRef = inject(DestroyRef);
+  private injector = inject(Injector);
 
   @ViewChild('messageList') private messageList!: ElementRef<HTMLElement>;
 
@@ -45,7 +46,7 @@ export class QueryComponent {
       next: response => {
         this.chatService.addAssistantMessage(response);
         this.isLoading = false;
-        setTimeout(() => this.scrollToBottom());
+        this.scrollToBottom();
       },
       error: () => {
         this.chatService.addErrorMessage();
@@ -55,7 +56,9 @@ export class QueryComponent {
   }
 
   private scrollToBottom(): void {
-    const el = this.messageList?.nativeElement;
-    if (el) el.scrollTop = el.scrollHeight;
+    afterNextRender(() => {
+      const el = this.messageList?.nativeElement;
+      if (el) el.scrollTop = el.scrollHeight;
+    }, { injector: this.injector });
   }
 }

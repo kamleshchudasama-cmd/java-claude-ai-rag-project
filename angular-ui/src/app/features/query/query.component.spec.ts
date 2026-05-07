@@ -25,7 +25,7 @@ describe('QueryComponent', () => {
     await TestBed.configureTestingModule({
       imports: [QueryComponent, NoopAnimationsModule],
       providers: [
-        ChatService,
+        { provide: ChatService, useFactory: () => new ChatService() },
         { provide: RagApiService, useValue: ragApiSpy }
       ]
     }).compileComponents();
@@ -35,6 +35,8 @@ describe('QueryComponent', () => {
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
+
+  afterEach(() => chatService.reset());
 
   it('shows empty-state text when message list is empty', () => {
     const el: HTMLElement = fixture.nativeElement.querySelector('.empty-state');

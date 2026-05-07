@@ -24,4 +24,8 @@ export class ChatService {
       text: 'Something went wrong. Please try again.'
     }]);
   }
+
+  reset(): void {
+    this.messages.set([]);
+  }
 }

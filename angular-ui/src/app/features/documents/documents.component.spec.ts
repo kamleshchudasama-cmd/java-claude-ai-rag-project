@@ -22,6 +22,8 @@ const mockDoc: DocumentSummary = {
 class FakeDocumentsService {
   documents = signal<DocumentSummary[]>([]);
   error = signal<string | null>(null);
+  deleteError = signal<string>('');
+  isLoading = signal<boolean>(false);
   load = jasmine.createSpy('load');
   delete = jasmine.createSpy('delete');
 }
@@ -54,10 +56,27 @@ describe('DocumentsComponent', () => {
     expect(fakeService.load).toHaveBeenCalled();
   });
 
-  it('shows empty-state text when documents list is empty', () => {
+  it('shows empty-state text when documents list is empty and not loading', () => {
+    fakeService.isLoading.set(false);
+    fixture.detectChanges();
     const el: HTMLElement = fixture.nativeElement.querySelector('.empty-state');
     expect(el).toBeTruthy();
     expect(el.textContent).toContain('No documents ingested yet');
+  });
+
+  it('shows loading spinner and hides empty-state while isLoading is true', () => {
+    fakeService.isLoading.set(true);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.loading-state')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.empty-state')).toBeNull();
+  });
+
+  it('hides loading spinner once isLoading becomes false', () => {
+    fakeService.isLoading.set(true);
+    fixture.detectChanges();
+    fakeService.isLoading.set(false);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.loading-state')).toBeNull();
   });
 
   it('renders one card per document', () => {
@@ -96,7 +115,7 @@ describe('DocumentsComponent', () => {
     fixture.detectChanges();
     const btn: HTMLButtonElement = fixture.nativeElement.querySelector('.doc-card button');
     btn.click();
-    expect(fakeService.delete).toHaveBeenCalledWith('abc123', jasmine.any(Function));
+    expect(fakeService.delete).toHaveBeenCalledWith('abc123');
   });
 
   it('does not call delete when dialog is cancelled', () => {
@@ -108,10 +127,19 @@ describe('DocumentsComponent', () => {
     expect(fakeService.delete).not.toHaveBeenCalled();
   });
 
-  it('error strip is absent when the error signal is null', () => {
+  it('error strip is absent when both error signals are null/empty', () => {
     fakeService.error.set(null);
+    fakeService.deleteError.set('');
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('.alert-strip')).toBeNull();
+  });
+
+  it('shows delete error strip when deleteError signal is set', () => {
+    fakeService.deleteError.set('Failed to delete. Try again.');
+    fixture.detectChanges();
+    const strips: NodeListOf<HTMLElement> = fixture.nativeElement.querySelectorAll('.alert-strip');
+    const texts = Array.from(strips).map(s => s.textContent ?? '');
+    expect(texts.some(t => t.includes('Failed to delete'))).toBeTrue();
   });
 
   it('doc card displays chunk count and total tokens in the meta line', () => {

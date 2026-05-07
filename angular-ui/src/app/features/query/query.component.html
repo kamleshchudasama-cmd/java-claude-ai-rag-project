@@ -21,14 +21,15 @@
     }
   </div>
   <div class="input-bar">
-    <mat-form-field appearance="outline" class="input-field">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="input-field">
       <input matInput
         [(ngModel)]="inputText"
         placeholder="Ask a question…"
-        [disabled]="isLoading"
+        [attr.disabled]="isLoading ? true : null"
         (keydown.enter)="send()" />
     </mat-form-field>
     <button mat-icon-button color="primary"
+      [attr.aria-label]="isLoading ? 'Sending…' : 'Send message'"
       [disabled]="isLoading || !inputText.trim()"
       (click)="send()">
       @if (isLoading) {
