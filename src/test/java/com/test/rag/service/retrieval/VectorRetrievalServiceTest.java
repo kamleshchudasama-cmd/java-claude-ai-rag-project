@@ -228,7 +228,7 @@ class VectorRetrievalServiceTest {
 
         List<ScoredChunk> result = service.retrieve("query");
 
-        assertThat(result.get(0).similarityScore()).isEqualTo(0.876);
+        assertThat(result.get(0).similarityScore()).isEqualTo(BigDecimal.valueOf(0.876));
     }
 
     @Test
@@ -237,7 +237,7 @@ class VectorRetrievalServiceTest {
                 "chunk-42", "Original content text", 3, 15,
                 Map.of("filename", "report.pdf", "chunk_index", "3")
         );
-        ScoredChunk scored = new ScoredChunk(originalChunk, 0.91);
+        ScoredChunk scored = new ScoredChunk(originalChunk, BigDecimal.valueOf(0.91));
         when(vectorStoreService.search(anyString(), anyInt(), anyDouble()))
                 .thenReturn(List.of(scored));
 
@@ -275,6 +275,6 @@ class VectorRetrievalServiceTest {
                 (int) Math.ceil(content.length() / 4.0),
                 Map.of("filename", "test.pdf")
         );
-        return new ScoredChunk(chunk, score);
+        return new ScoredChunk(chunk, BigDecimal.valueOf(score));
     }
 }

@@ -13,6 +13,7 @@ import org.springframework.ai.document.Document;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -87,7 +88,7 @@ class PgVectorStoreServiceTest {
         List<ScoredChunk> result = service.search("query", 5, 0.75);
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).similarityScore()).isEqualTo(0.92);
+        assertThat(result.get(0).similarityScore()).isEqualTo(BigDecimal.valueOf(0.92));
         assertThat(result.get(0).chunk().content()).isEqualTo("Chunk content");
         assertThat(result.get(0).chunk().chunkId()).isEqualTo("chunk-id-1");
     }

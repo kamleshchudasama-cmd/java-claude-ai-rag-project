@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.model.ChatResponse;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -210,6 +211,6 @@ class OpenAiGenerationServiceTest {
     }
 
     private Citation citation(int ref, String filename, int chunkIndex) {
-        return new Citation(ref, filename, chunkIndex, 0.90, "Sample text for ref " + ref);
+        return new Citation(ref, filename, chunkIndex, BigDecimal.valueOf(0.90), "Sample text for ref " + ref);
     }
 }

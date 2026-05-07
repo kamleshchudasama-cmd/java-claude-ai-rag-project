@@ -1,9 +1,11 @@
 package com.test.rag.model;
 
+import java.math.BigDecimal;
+
 public record Citation(
         int ref,
         String filename,
         int chunkIndex,
-        double score,
+        BigDecimal score,
         String chunkText
 ) {}

@@ -257,7 +257,7 @@ class RagControllerTest {
 
     @Test
     void query_citationFieldsSerializedCorrectly() throws Exception {
-        Citation citation = new Citation(1, "report.pdf", 2, 0.91, "Some chunk text");
+        Citation citation = new Citation(1, "report.pdf", 2, java.math.BigDecimal.valueOf(0.91), "Some chunk text");
         given(retrievalService.retrieve(anyString())).willReturn(List.of());
         given(contextBuilderService.build(anyString(), any())).willReturn(builtContext());
         given(generationService.generate(any())).willReturn(
@@ -390,7 +390,7 @@ class RagControllerTest {
     }
 
     private ScoredChunk scoredChunk(String chunkId, double score) {
-        return new ScoredChunk(chunk(chunkId), score);
+        return new ScoredChunk(chunk(chunkId), java.math.BigDecimal.valueOf(score));
     }
 
     private BuiltContext builtContext() {

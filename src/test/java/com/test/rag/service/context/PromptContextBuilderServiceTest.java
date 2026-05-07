@@ -8,6 +8,7 @@ import com.test.rag.model.ScoredChunk;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -91,7 +92,7 @@ class PromptContextBuilderServiceTest {
         BuiltContext result = service.build("query",
                 List.of(scoredChunk("c1", "Content", 0, 0.873, "doc.pdf")));
 
-        assertThat(result.citations().get(0).score()).isEqualTo(0.873);
+        assertThat(result.citations().get(0).score()).isEqualTo(BigDecimal.valueOf(0.873));
     }
 
     @Test
@@ -164,7 +165,7 @@ class PromptContextBuilderServiceTest {
 
         // Ref [1] must be the highest-scoring chunk
         assertThat(result.citations().get(0).ref()).isEqualTo(1);
-        assertThat(result.citations().get(0).score()).isEqualTo(0.95);
+        assertThat(result.citations().get(0).score()).isEqualTo(BigDecimal.valueOf(0.95));
         assertThat(result.citations().get(0).chunkText()).isEqualTo("High score chunk");
     }
 
@@ -177,7 +178,7 @@ class PromptContextBuilderServiceTest {
         BuiltContext result = service.build("query", List.of(high, medium, low));
 
         Citation last = result.citations().get(result.citations().size() - 1);
-        assertThat(last.score()).isEqualTo(0.78);
+        assertThat(last.score()).isEqualTo(BigDecimal.valueOf(0.78));
         assertThat(last.chunkText()).isEqualTo("Low content");
     }
 
@@ -211,7 +212,7 @@ class PromptContextBuilderServiceTest {
         BuiltContext result = service.build("query", List.of(highScore, lowScore));
 
         assertThat(result.citations()).hasSize(1);
-        assertThat(result.citations().get(0).score()).isEqualTo(0.95);
+        assertThat(result.citations().get(0).score()).isEqualTo(BigDecimal.valueOf(0.95));
     }
 
     @Test
@@ -236,7 +237,7 @@ class PromptContextBuilderServiceTest {
     @Test
     void build_filenameNotInChunkMetadata_usesUnknownFallback() {
         DocumentChunk chunk = new DocumentChunk("c1", "Some content", 0, 5, Map.of());
-        ScoredChunk scored  = new ScoredChunk(chunk, 0.90);
+        ScoredChunk scored  = new ScoredChunk(chunk, BigDecimal.valueOf(0.90));
 
         BuiltContext result = service.build("query", List.of(scored));
 
@@ -277,6 +278,6 @@ class PromptContextBuilderServiceTest {
                 (int) Math.ceil(content.length() / 4.0),
                 Map.of("filename", filename)
         );
-        return new ScoredChunk(chunk, score);
+        return new ScoredChunk(chunk, BigDecimal.valueOf(score));
     }
 }

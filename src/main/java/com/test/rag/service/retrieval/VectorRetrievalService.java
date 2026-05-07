@@ -38,7 +38,7 @@ public class VectorRetrievalService implements RetrievalService {
                 userQuery,
                 topK,
                 results.size(),
-                results.stream().map(c -> String.format("%.3f", c.similarityScore())).toList());
+                results.stream().map(c -> c.similarityScore().toString()).toList());
 
         return results;
     }

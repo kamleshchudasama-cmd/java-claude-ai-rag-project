@@ -30,7 +30,7 @@ public class PromptContextBuilderService implements ContextBuilderService {
     public BuiltContext build(String userQuery, List<ScoredChunk> scoredChunks) {
         // Highest-scoring chunks first so truncation keeps the most relevant
         List<ScoredChunk> sorted = scoredChunks.stream()
-                .sorted(Comparator.comparingDouble(ScoredChunk::similarityScore).reversed())
+                .sorted(Comparator.comparing(ScoredChunk::similarityScore).reversed())
                 .toList();
 
         int maxTokens = props.getMaxContextTokens();

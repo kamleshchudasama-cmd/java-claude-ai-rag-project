@@ -13,6 +13,7 @@ import org.springframework.ai.vectorstore.filter.FilterExpressionBuilder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -57,12 +58,12 @@ public class PgVectorStoreService implements VectorStoreService {
         List<Document> docs = vectorStore.similaritySearch(request);
         List<ScoredChunk> results = docs.stream().map(this::toScoredChunk).toList();
 
-        double minScore = results.stream().mapToDouble(ScoredChunk::similarityScore).min().orElse(0.0);
-        double maxScore = results.stream().mapToDouble(ScoredChunk::similarityScore).max().orElse(0.0);
+        BigDecimal minScore = results.stream().map(ScoredChunk::similarityScore).min(Comparator.naturalOrder()).orElse(BigDecimal.ZERO);
+        BigDecimal maxScore = results.stream().map(ScoredChunk::similarityScore).max(Comparator.naturalOrder()).orElse(BigDecimal.ZERO);
         log.info("Search topK={} returned={} scoreRange=[{},{}] latencyMs={}",
                 topK, results.size(),
-                String.format("%.3f", minScore),
-                String.format("%.3f", maxScore),
+                minScore,
+                maxScore,
                 System.currentTimeMillis() - start);
 
         return results;
@@ -168,7 +169,7 @@ public class PgVectorStoreService implements VectorStoreService {
         String chunkId = (String) doc.getMetadata().getOrDefault("chunkId", doc.getId());
         int chunkIndex = parseIntOrZero(doc.getMetadata().get("chunkIndex"));
         int tokenCount = parseIntOrZero(doc.getMetadata().get("tokenCount"));
-        double score   = Objects.nonNull(doc.getScore()) ? doc.getScore() : 0.0;
+        BigDecimal score = Objects.nonNull(doc.getScore()) ? BigDecimal.valueOf(doc.getScore()) : BigDecimal.ZERO;
 
         DocumentChunk chunk = new DocumentChunk(chunkId, doc.getText(), chunkIndex, tokenCount, meta);
         return new ScoredChunk(chunk, score);
