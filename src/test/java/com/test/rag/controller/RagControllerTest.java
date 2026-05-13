@@ -4,6 +4,7 @@ import com.test.rag.controller.GlobalExceptionHandler;
 import com.test.rag.model.BuiltContext;
 import com.test.rag.model.Citation;
 import com.test.rag.model.DocumentChunk;
+import com.test.rag.model.DocumentSummary;
 import com.test.rag.model.EmbeddedChunk;
 import com.test.rag.model.ParsedDocument;
 import com.test.rag.model.RagResponse;
@@ -36,6 +37,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -399,5 +402,99 @@ class RagControllerTest {
 
     private RagResponse ragResponse(String answer) {
         return new RagResponse(answer, List.of(), 100);
+    }
+
+    private DocumentSummary documentSummary(String filename, String sourceId) {
+        return new DocumentSummary(filename, sourceId, "application/pdf",
+                null, null, "2025-01-01T00:00:00Z", 1024L, 5, 200);
+    }
+
+    // =========================================================================
+    // GET /api/rag/documents
+    // =========================================================================
+
+    @Test
+    void listDocuments_returns200Ok() throws Exception {
+        given(vectorStoreService.listDocuments()).willReturn(List.of());
+
+        mockMvc.perform(get("/api/rag/documents"))
+               .andExpect(status().isOk());
+    }
+
+    @Test
+    void listDocuments_emptyStore_returnsEmptyJsonArray() throws Exception {
+        given(vectorStoreService.listDocuments()).willReturn(List.of());
+
+        mockMvc.perform(get("/api/rag/documents"))
+               .andExpect(jsonPath("$").isArray())
+               .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void listDocuments_twoDocuments_returnsArrayOfTwo() throws Exception {
+        given(vectorStoreService.listDocuments()).willReturn(List.of(
+                documentSummary("report.pdf", "src-1"),
+                documentSummary("manual.pdf", "src-2")
+        ));
+
+        mockMvc.perform(get("/api/rag/documents"))
+               .andExpect(jsonPath("$.length()").value(2));
+    }
+
+    @Test
+    void listDocuments_documentFieldsSerializedCorrectly() throws Exception {
+        given(vectorStoreService.listDocuments()).willReturn(List.of(
+                documentSummary("report.pdf", "abc123")));
+
+        mockMvc.perform(get("/api/rag/documents"))
+               .andExpect(jsonPath("$[0].filename").value("report.pdf"))
+               .andExpect(jsonPath("$[0].sourceId").value("abc123"))
+               .andExpect(jsonPath("$[0].chunkCount").value(5))
+               .andExpect(jsonPath("$[0].totalTokens").value(200));
+    }
+
+    @Test
+    void listDocuments_vectorStoreThrows_returns500() throws Exception {
+        given(vectorStoreService.listDocuments()).willThrow(new RuntimeException("DB error"));
+
+        mockMvc.perform(get("/api/rag/documents"))
+               .andExpect(status().isInternalServerError());
+    }
+
+    // =========================================================================
+    // DELETE /api/rag/documents/{id}
+    // =========================================================================
+
+    @Test
+    void deleteDocument_existingId_returns204NoContent() throws Exception {
+        given(vectorStoreService.deleteBySource("src-abc")).willReturn(true);
+
+        mockMvc.perform(delete("/api/rag/documents/src-abc"))
+               .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void deleteDocument_nonExistingId_returns404NotFound() throws Exception {
+        given(vectorStoreService.deleteBySource("missing-id")).willReturn(false);
+
+        mockMvc.perform(delete("/api/rag/documents/missing-id"))
+               .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void deleteDocument_passesPathVariableToVectorStore() throws Exception {
+        given(vectorStoreService.deleteBySource("source-xyz")).willReturn(true);
+
+        mockMvc.perform(delete("/api/rag/documents/source-xyz"));
+
+        verify(vectorStoreService).deleteBySource("source-xyz");
+    }
+
+    @Test
+    void deleteDocument_vectorStoreThrows_returns500() throws Exception {
+        given(vectorStoreService.deleteBySource(any())).willThrow(new RuntimeException("DB error"));
+
+        mockMvc.perform(delete("/api/rag/documents/src-1"))
+               .andExpect(status().isInternalServerError());
     }
 }

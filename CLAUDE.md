@@ -89,15 +89,17 @@ Root package: `com.test.rag`
 ```
 src/main/java/com/test/rag/
 ├── config/
-│   ├── SpringAiConfig.java               # ChatClient + EmbeddingModel bean wiring
-│   └── RagProperties.java                # @ConfigurationProperties — all RAG tuning params
+│   ├── SpringAiConfig.java               # explicit beans: ChatClient, AutoDetectParser (EmbeddingModel + VectorStore auto-configured by starters)
+│   ├── RagProperties.java                # @ConfigurationProperties — all RAG tuning params
+│   └── WebConfig.java                    # CORS — allows http://localhost:4200 on /api/**
 ├── controller/
 │   ├── RagController.java                # REST endpoints (see REST API below)
 │   └── GlobalExceptionHandler.java       # @RestControllerAdvice — catches RuntimeException → HTTP 500
 ├── exception/
 │   ├── DocumentParseException.java
 │   ├── ChunkingException.java
-│   └── EmbeddingException.java
+│   ├── EmbeddingException.java
+│   └── GenerationException.java
 ├── model/                                # all are Java records (immutable)
 │   ├── ParsedDocument.java               # content, metadata Map, sourceId (SHA-256)
 │   ├── DocumentChunk.java                # chunkId (SHA-256), content, index, tokens, metadata
@@ -116,7 +118,8 @@ src/main/java/com/test/rag/
     │   └── RecursiveChunkingService.java   # paragraph → sentence → word; chunkId = SHA-256(sourceId+index)
     ├── embedding/
     │   ├── EmbeddingService.java
-    │   └── OpenAiEmbeddingService.java     # batch=32, L2-normalized, @Retryable(3×, 1 s delay)
+    │   ├── OpenAiEmbeddingService.java     # splits chunks into batches, delegates to EmbeddingBatchProcessor
+    │   └── EmbeddingBatchProcessor.java    # @Service — holds @Retryable(3×, 1 s delay); L2-normalizes vectors
     ├── vectorstore/
     │   ├── VectorStoreService.java
     │   └── PgVectorStoreService.java       # upsert / search / deleteBySource(@Transactional) / listDocuments
@@ -125,7 +128,7 @@ src/main/java/com/test/rag/
     │   └── OpenAiQueryEmbeddingService.java  # single-query embed, L2-normalized
     ├── retrieval/
     │   ├── RetrievalService.java
-    │   └── VectorRetrievalService.java     # calls QueryEmbeddingService → VectorStoreService.search()
+    │   └── VectorRetrievalService.java     # calls QueryEmbeddingService → VectorStoreService.search(); honours retrievalEnabled kill-switch
     ├── context/
     │   ├── ContextBuilderService.java
     │   └── PromptContextBuilderService.java  # loads prompts/rag-system.st, sorts by score, truncates to maxContextTokens
@@ -184,7 +187,7 @@ under the `rag.*` prefix. **Never hardcode these in service classes.**
 | `embeddingRequestDelayMs` | 0 | Delay between embedding batches (rate-limit buffer) |
 | `retrievalEnabled` | true | Kill-switch for retrieval step |
 | `topK` | 5 | Chunks returned from vector search |
-| `minSimilarity` | 0.75 (class) / 0.7 (application.properties) | Cosine similarity threshold (BigDecimal) |
+| `minSimilarity` | 0.75 (class default) / 0.3 (application.properties) | Cosine similarity threshold (BigDecimal) |
 | `useMmr` | false | Enable Maximal Marginal Relevance re-ranking |
 | `temperature` | 0.2 | LLM temperature (BigDecimal) |
 | `maxOutputTokens` | 2048 | LLM max response length |
@@ -194,9 +197,10 @@ under the `rag.*` prefix. **Never hardcode these in service classes.**
 ---
 
 ## Retry Policies
-- **EmbeddingService**: `@Retryable`, maxAttempts=3, delay=1 000 ms (HTTP 429 / IOException)
-- **GenerationService**: `@Retryable`, maxAttempts=3, delay=10 000 ms (HTTP 429 / IOException)
+- **`EmbeddingBatchProcessor.embedBatch()`**: `@Retryable`, maxAttempts=3, delay=1 000 ms (`TooManyRequests` / `ResourceAccessException`)
+- **`OpenAiGenerationService.generate()`**: `@Retryable`, maxAttempts=3, delay=10 000 ms (`TooManyRequests` / `ResourceAccessException`)
 - Requires `spring-retry` + `spring-boot-starter-aop` on the classpath.
+- `@Retryable` must be on a **Spring-managed bean method called via proxy** — it will not intercept calls within the same class.
 
 ---
 
@@ -206,7 +210,10 @@ under the `rag.*` prefix. **Never hardcode these in service classes.**
    Use `ChatClient` bean for generation, `EmbeddingModel` bean for embeddings.
 
 2. `VectorStoreService` is the single point of contact with PGVector.
-   No other service imports `VectorStore` or runs SQL directly.
+   No other service imports `VectorStore`, `JdbcTemplate`, or runs SQL directly.
+   `PgVectorStoreService` itself uses both `VectorStore` (add/delete) and `JdbcTemplate`
+   for the cosine-similarity `search()` — Spring AI's `SearchRequest` does not expose
+   per-row similarity scores, so raw SQL is required there.
 
 3. `RagProperties` is the single source of truth for all tuneable params.
    Never use `@Value` for RAG params outside this class.
@@ -231,6 +238,42 @@ under the `rag.*` prefix. **Never hardcode these in service classes.**
 
 ---
 
+## Angular UI (`angular-ui/`)
+Angular 18 + Angular Material SPA that talks to the Spring Boot backend.
+
+**Dev commands** (run from `angular-ui/`):
+```bash
+npm install        # first-time setup
+npm start          # dev server → http://localhost:4200
+npm test           # Karma/Jasmine unit tests
+npm run build      # production build → dist/
+```
+
+**Structure:**
+```
+angular-ui/src/app/
+├── core/
+│   ├── models.ts              # TypeScript mirrors of RagResponse, DocumentSummary, Citation
+│   └── rag-api.service.ts     # single HTTP client for all four backend endpoints
+├── features/
+│   ├── query/                 # chat interface + ChatService (conversation state)
+│   ├── ingest/                # file upload form
+│   └── documents/             # document list + delete (DocumentsService)
+└── shared/
+    ├── citation-card/         # renders a single Citation
+    └── confirm-dialog/        # reusable confirmation dialog (Angular Material)
+```
+
+Routes: `/query` (default), `/ingest`, `/documents` — all lazy-loaded standalone components.
+
+`environment.development.ts` sets `apiBaseUrl` to `http://localhost:8080`. The backend's `WebConfig` allows CORS from `http://localhost:4200` only.
+
+**Rules for Angular work:**
+- Always use separate `.html` / `.ts` / `.scss` files — never inline templates or styles.
+- `RagApiService` is the only class that may call `HttpClient` — feature components inject feature services, not `RagApiService` directly.
+
+---
+
 ## Deployment
 - `docker-compose.yml` — starts PGVector (port 5433); preferred for local dev
 - `Dockerfile` — builds the application image for containerized deployment
@@ -238,9 +281,11 @@ under the `rag.*` prefix. **Never hardcode these in service classes.**
 ---
 
 ## Architecture Reference
-`RAG-ARCHITECTURE.md` at the project root contains detailed data-flow diagrams and
-sequence diagrams for both ingestion and query pipelines. Consult it before making
-structural changes to the pipeline.
+`RAG-ARCHITECTURE.md` and `SPEC.md` at the project root reflect the **original design**
+(Gemini/Anthropic stack) and are outdated. The current implementation uses OpenAI
+(gpt-4o-mini + text-embedding-3-small). Use **this file** as the authoritative reference;
+the diagrams in `RAG-ARCHITECTURE.md` are useful for pipeline shape but provider/config
+details there are stale.
 
 ---
 
@@ -263,12 +308,34 @@ Each service sub-package has a corresponding spec file there.
 `ragas-eval.py` + `src/main/resources/eval/eval-dataset.json` — offline RAGAS-based
 evaluation harness. Run against a live stack to measure faithfulness and answer relevance.
 
+## PGVector Metadata Key Conventions
+The following keys are stored in the `vector_store` metadata column and referenced
+in raw SQL queries and service logic. **Do not rename without migrating existing rows.**
+
+| Key | Written by | Used in |
+|---|---|---|
+| `source_id` | `TikaDocumentLoaderService` | `deleteBySource` SQL (`metadata->>'source_id'`), `listDocuments` grouping |
+| `filename` | `TikaDocumentLoaderService` | `listDocuments` display, citations |
+| `chunkId` | `PgVectorStoreService.toDocument()` | search result re-hydration |
+| `chunkIndex` | `PgVectorStoreService.toDocument()` | search result re-hydration |
+| `tokenCount` | `PgVectorStoreService.toDocument()` | `listDocuments` token totals |
+| `content-type`, `author`, `created-date`, `upload-timestamp`, `file-size-bytes` | `TikaDocumentLoaderService` | `listDocuments` display |
+
+Note: `PgVectorStoreService.toDocument()` derives the PGVector UUID deterministically
+via `UUID.nameUUIDFromBytes(chunkId.getBytes(UTF_8))` so upserts are idempotent.
+
+`listDocuments()` fetches all chunks with topK=10 000 and groups in Java — not suitable
+for corpora with tens of thousands of chunks.
+
+---
+
 ## What NOT to Do
 - Do not bypass Spring AI to call OpenAI APIs via raw HTTP
 - Do not put chunking params as magic numbers in service classes — use `RagProperties`
 - Do not run PGVector SQL outside `VectorStoreService`
 - Do not change embedding dimensions without reindexing the vector table
+- Do not rename PGVector metadata keys (`source_id`, `chunkId`, etc.) without migrating existing `vector_store` rows — they are referenced in raw SQL
 - Do not add blocking calls inside reactive/async chains
-- Do not catch `Exception` directly — use specific types (`DocumentParseException`, `ChunkingException`, `EmbeddingException`)
+- Do not catch `Exception` directly — use specific types (`DocumentParseException`, `ChunkingException`, `EmbeddingException`, `GenerationException`)
 - Do not apply `@Transactional` on private methods
 - Do not hardcode environment config — use `application.properties` / environment variables

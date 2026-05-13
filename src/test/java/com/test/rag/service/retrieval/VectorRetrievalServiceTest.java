@@ -21,6 +21,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -39,7 +41,8 @@ class VectorRetrievalServiceTest {
     @BeforeEach
     void setUp() {
         props = new RagProperties(); // defaults: topK=5, minSimilarity=0.75
-        when(mockQueryEmbeddingService.embed(anyString())).thenReturn(new float[]{0.1f, 0.2f});
+        // lenient: the kill-switch test bypasses embedding entirely
+        lenient().when(mockQueryEmbeddingService.embed(anyString())).thenReturn(new float[]{0.1f, 0.2f});
         service = new VectorRetrievalService(vectorStoreService, props, mockQueryEmbeddingService);
     }
 
@@ -262,6 +265,21 @@ class VectorRetrievalServiceTest {
         assertThatThrownBy(() -> service.retrieve("query"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("DB connection lost");
+    }
+
+    // -------------------------------------------------------------------------
+    // retrievalEnabled kill-switch
+    // -------------------------------------------------------------------------
+
+    @Test
+    void retrieve_retrievalDisabled_returnsEmptyListImmediately() {
+        props.setRetrievalEnabled(false);
+
+        List<ScoredChunk> result = service.retrieve("What is AI?");
+
+        assertThat(result).isEmpty();
+        verify(mockQueryEmbeddingService, never()).embed(anyString());
+        verify(vectorStoreService, never()).search(any(float[].class), anyInt(), any(BigDecimal.class));
     }
 
     // -------------------------------------------------------------------------

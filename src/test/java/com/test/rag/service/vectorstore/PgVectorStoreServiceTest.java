@@ -175,7 +175,101 @@ class PgVectorStoreServiceTest {
         verify(vectorStore, never()).similaritySearch(any(SearchRequest.class));
     }
 
+    // =========================================================================
+    // listDocuments
+    // =========================================================================
+
+    @Test
+    void listDocuments_emptyStore_returnsEmptyList() {
+        when(vectorStore.similaritySearch(any(SearchRequest.class))).thenReturn(List.of());
+
+        var result = service.listDocuments();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void listDocuments_singleDocument_returnsSingleSummary() {
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(document("src-1", "report.pdf", 50)));
+
+        var result = service.listDocuments();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).sourceId()).isEqualTo("src-1");
+        assertThat(result.get(0).filename()).isEqualTo("report.pdf");
+    }
+
+    @Test
+    void listDocuments_multipleChunksSameSourceId_groupedIntoOneSummary() {
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(
+                        document("src-1", "report.pdf", 100),
+                        document("src-1", "report.pdf", 80),
+                        document("src-1", "report.pdf", 60)
+                ));
+
+        var result = service.listDocuments();
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).chunkCount()).isEqualTo(3);
+    }
+
+    @Test
+    void listDocuments_multipleChunksSameSource_totalTokensSummed() {
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(
+                        document("src-1", "report.pdf", 100),
+                        document("src-1", "report.pdf", 80),
+                        document("src-1", "report.pdf", 60)
+                ));
+
+        var result = service.listDocuments();
+
+        assertThat(result.get(0).totalTokens()).isEqualTo(240);
+    }
+
+    @Test
+    void listDocuments_twoDocuments_groupedBySourceId() {
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(
+                        document("src-1", "alpha.pdf", 50),
+                        document("src-2", "beta.pdf",  70)
+                ));
+
+        var result = service.listDocuments();
+
+        assertThat(result).hasSize(2);
+    }
+
+    @Test
+    void listDocuments_twoDocuments_sortedAlphabeticallyByFilename() {
+        when(vectorStore.similaritySearch(any(SearchRequest.class)))
+                .thenReturn(List.of(
+                        document("src-2", "zebra.pdf", 50),
+                        document("src-1", "apple.pdf", 50)
+                ));
+
+        var result = service.listDocuments();
+
+        assertThat(result.get(0).filename()).isEqualTo("apple.pdf");
+        assertThat(result.get(1).filename()).isEqualTo("zebra.pdf");
+    }
+
     // --- helpers ---
+
+    private Document document(String sourceId, String filename, int tokenCount) {
+        return Document.builder()
+                .id(UUID.randomUUID().toString())
+                .text("chunk content")
+                .metadata(Map.of(
+                        "source_id",   sourceId,
+                        "filename",    filename,
+                        "tokenCount",  String.valueOf(tokenCount),
+                        "content-type", "application/pdf"
+                ))
+                .build();
+    }
 
     private EmbeddedChunk embeddedChunk(String chunkId, String content, int index) {
         DocumentChunk chunk = new DocumentChunk(
