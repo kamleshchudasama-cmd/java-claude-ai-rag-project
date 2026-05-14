@@ -11,7 +11,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatListModule } from '@angular/material/list';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { RagApiService } from '../../core/rag-api.service';
 import { ConfirmDialogComponent } from '../../shared/confirm-dialog/confirm-dialog.component';
 import { CitationCardComponent } from '../../shared/citation-card/citation-card.component';
 import { ChatService } from '../query/chat.service';
@@ -38,7 +37,6 @@ import { CrawlService } from './crawl.service';
 export class CrawlComponent implements OnInit {
   protected crawlService = inject(CrawlService);
   protected chatService = inject(ChatService);
-  private ragApi = inject(RagApiService);
   private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
   private injector = inject(Injector);
@@ -74,7 +72,7 @@ export class CrawlComponent implements OnInit {
     this.questionInput = '';
     this.isQuerying = true;
     this.chatService.addUserMessage(text);
-    this.ragApi.query(text).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+    this.crawlService.query(text).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: response => {
         this.chatService.addAssistantMessage(response);
         this.isQuerying = false;

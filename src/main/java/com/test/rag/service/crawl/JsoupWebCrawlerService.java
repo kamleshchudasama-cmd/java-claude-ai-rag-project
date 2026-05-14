@@ -59,8 +59,8 @@ public class JsoupWebCrawlerService implements WebCrawlerService {
     public void crawl(String url, String jobId) {
         try {
             crawlInternal(url, jobId);
-        } catch (CrawlException e) {
-            log.error("Crawl failed for url='{}' jobId='{}': {}", url, jobId, e.getMessage());
+        } catch (Exception e) {
+            log.error("Crawl failed for url='{}' jobId='{}': {}", url, jobId, e.getMessage(), e);
             crawlJobStore.update(jobId, "FAILED", 0, 0, 0, e.getMessage());
         }
     }

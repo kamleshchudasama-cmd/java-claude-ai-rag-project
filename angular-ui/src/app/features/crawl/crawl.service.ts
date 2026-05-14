@@ -1,9 +1,9 @@
 import { Injectable, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { interval } from 'rxjs';
+import { Observable, interval } from 'rxjs';
 import { switchMap, takeWhile } from 'rxjs/operators';
 import { RagApiService } from '../../core/rag-api.service';
-import { CrawlSiteSummary } from '../../core/models';
+import { CrawlSiteSummary, RagResponse } from '../../core/models';
 
 @Injectable()
 export class CrawlService {
@@ -63,5 +63,9 @@ export class CrawlService {
       next: () => this.loadSites(),
       error: () => { /* silent — delete failed, list stays as-is */ }
     });
+  }
+
+  query(text: string): Observable<RagResponse> {
+    return this.ragApi.query(text);
   }
 }

@@ -47,6 +47,14 @@ class CrawlControllerTest {
     }
 
     @Test
+    void startCrawl_returns_400_for_non_http_scheme() throws Exception {
+        mockMvc.perform(post("/api/rag/crawl").param("url", "ftp://example.com"))
+                .andExpect(status().isBadRequest());
+
+        verify(webCrawlerService, never()).crawl(any(), any());
+    }
+
+    @Test
     void startCrawl_returns_400_for_blank_url() throws Exception {
         mockMvc.perform(post("/api/rag/crawl").param("url", "  "))
                 .andExpect(status().isBadRequest());

@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CrawlComponent } from './crawl.component';
 import { CrawlService } from './crawl.service';
 import { ChatService } from '../query/chat.service';
-import { RagApiService } from '../../core/rag-api.service';
 import { MatDialog } from '@angular/material/dialog';
 import { signal } from '@angular/core';
 import { of } from 'rxjs';
@@ -34,7 +33,6 @@ describe('CrawlComponent', () => {
     await TestBed.configureTestingModule({
       imports: [CrawlComponent, NoopAnimationsModule],
       providers: [
-        { provide: RagApiService, useValue: jasmine.createSpyObj('RagApiService', ['query']) },
         { provide: MatDialog, useValue: jasmine.createSpyObj('MatDialog', ['open']) }
       ]
     })

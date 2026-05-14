@@ -42,7 +42,14 @@ public class CrawlController {
             throw new CrawlException("URL must not be blank");
         }
         try {
-            URI.create(url).toURL();
+            URI uri = URI.create(url);
+            String scheme = uri.getScheme();
+            if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                throw new CrawlException("URL must use http or https scheme: " + url);
+            }
+            uri.toURL();
+        } catch (CrawlException e) {
+            throw e;
         } catch (Exception e) {
             throw new CrawlException("Invalid URL: " + url);
         }
