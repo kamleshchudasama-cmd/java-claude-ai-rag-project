@@ -13,6 +13,11 @@ export const routes: Routes = [
       import('./features/ingest/ingest.component').then(m => m.IngestComponent)
   },
   {
+    path: 'crawl',
+    loadComponent: () =>
+      import('./features/crawl/crawl.component').then(m => m.CrawlComponent)
+  },
+  {
     path: 'documents',
     loadComponent: () =>
       import('./features/documents/documents.component').then(m => m.DocumentsComponent)

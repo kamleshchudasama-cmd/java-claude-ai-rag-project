@@ -21,6 +21,10 @@ import { MatIconModule } from '@angular/material/icon';
             <mat-icon matListItemIcon>upload_file</mat-icon>
             <span matListItemTitle>Ingest</span>
           </a>
+          <a mat-list-item routerLink="/crawl" routerLinkActive="active">
+            <mat-icon matListItemIcon>language</mat-icon>
+            <span matListItemTitle>Crawl</span>
+          </a>
           <a mat-list-item routerLink="/documents" routerLinkActive="active">
             <mat-icon matListItemIcon>folder</mat-icon>
             <span matListItemTitle>Documents</span>

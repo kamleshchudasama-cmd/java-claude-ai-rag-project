@@ -23,7 +23,7 @@ describe('AppComponent', () => {
     expect(title.textContent?.trim()).toBe('RAG System');
   });
 
-  it('renders Query, Ingest, and Documents nav links', () => {
+  it('renders Query, Ingest, Crawl, and Documents nav links', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const titleSpans: HTMLElement[] = Array.from(
@@ -32,6 +32,7 @@ describe('AppComponent', () => {
     const texts = titleSpans.map(s => s.textContent?.trim());
     expect(texts).toContain('Query');
     expect(texts).toContain('Ingest');
+    expect(texts).toContain('Crawl');
     expect(texts).toContain('Documents');
   });
 
@@ -41,10 +42,11 @@ describe('AppComponent', () => {
     const links: HTMLAnchorElement[] = Array.from(
       fixture.nativeElement.querySelectorAll('mat-nav-list a')
     );
-    expect(links.length).toBe(3);
+    expect(links.length).toBe(4);
     const hrefs = links.map(l => l.getAttribute('href'));
     expect(hrefs).toContain('/query');
     expect(hrefs).toContain('/ingest');
+    expect(hrefs).toContain('/crawl');
     expect(hrefs).toContain('/documents');
   });
 
