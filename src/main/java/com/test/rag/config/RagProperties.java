@@ -34,6 +34,10 @@ public class RagProperties {
     // --- Document loading ---
     private int maxContentChars = 500_000;
 
+    // --- Crawl ---
+    private int crawlMaxPages = 50;
+    private int crawlConnectTimeoutMs = 10000;
+
     // --- Context ---
     private int maxContextTokens = 4096;
 
@@ -75,4 +79,10 @@ public class RagProperties {
 
     public int getMaxContentChars() { return maxContentChars; }
     public void setMaxContentChars(int maxContentChars) { this.maxContentChars = maxContentChars; }
+
+    public int getCrawlMaxPages() { return crawlMaxPages; }
+    public void setCrawlMaxPages(int crawlMaxPages) { this.crawlMaxPages = crawlMaxPages; }
+
+    public int getCrawlConnectTimeoutMs() { return crawlConnectTimeoutMs; }
+    public void setCrawlConnectTimeoutMs(int crawlConnectTimeoutMs) { this.crawlConnectTimeoutMs = crawlConnectTimeoutMs; }
 }
