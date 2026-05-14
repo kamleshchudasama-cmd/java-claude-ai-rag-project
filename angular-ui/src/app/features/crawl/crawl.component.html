@@ -1,0 +1,105 @@
+<div class="crawl-container">
+
+  <div class="crawl-section">
+    <h2>Crawl a Website</h2>
+    <div class="url-bar">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="url-field">
+        <input matInput
+          [(ngModel)]="urlInput"
+          placeholder="https://example.com"
+          [attr.disabled]="crawlService.crawlState() === 'running' ? true : null"
+          (keydown.enter)="startCrawl()" />
+      </mat-form-field>
+      <button mat-raised-button color="primary"
+        [disabled]="!urlInput.trim() || crawlService.crawlState() === 'running'"
+        (click)="startCrawl()">
+        @if (crawlService.crawlState() === 'running') {
+          <mat-spinner diameter="20" />
+        } @else {
+          Crawl
+        }
+      </button>
+    </div>
+
+    @switch (crawlService.crawlState()) {
+      @case ('running') {
+        <p class="status-running">
+          Crawling... ({{ crawlService.pagesVisited() }} pages visited)
+        </p>
+      }
+      @case ('done') {
+        <p class="status-done">
+          Done — {{ crawlService.pagesIngested() }} pages,
+          {{ crawlService.totalChunks() }} chunks ingested
+        </p>
+      }
+      @case ('failed') {
+        <p class="status-failed">{{ crawlService.errorMessage() }}</p>
+      }
+    }
+  </div>
+
+  @if (crawlService.crawledSites().length > 0) {
+    <div class="sites-section">
+      <h3>Crawled Sites</h3>
+      <mat-list>
+        @for (site of crawlService.crawledSites(); track site.rootUrl) {
+          <mat-list-item>
+            <span matListItemTitle class="site-url">{{ site.rootUrl }}</span>
+            <span matListItemLine>
+              {{ site.pagesIngested }} pages · {{ site.totalChunks }} chunks
+            </span>
+            <button mat-icon-button matListItemMeta color="warn"
+              aria-label="Delete site"
+              (click)="confirmDelete(site.rootUrl)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </mat-list-item>
+        }
+      </mat-list>
+    </div>
+  }
+
+  <div class="message-list" #messageList>
+    @if (chatService.messages().length === 0) {
+      <p class="empty-state">Crawl a website then ask questions about it</p>
+    }
+    @for (msg of chatService.messages(); track $index) {
+      @if (msg.role === 'user') {
+        <div class="message-row user">
+          <div class="bubble user-bubble">{{ msg.text }}</div>
+        </div>
+      } @else {
+        <div class="message-row assistant">
+          <div class="assistant-card">
+            <p class="answer-text">{{ msg.text }}</p>
+            @for (citation of (msg.citations ?? []); track citation.ref) {
+              <app-citation-card [citation]="citation" />
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+
+  <div class="input-bar">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="input-field">
+      <input matInput
+        [(ngModel)]="questionInput"
+        placeholder="Ask a question…"
+        [attr.disabled]="isQuerying ? true : null"
+        (keydown.enter)="sendQuestion()" />
+    </mat-form-field>
+    <button mat-icon-button color="primary"
+      [attr.aria-label]="isQuerying ? 'Sending…' : 'Send message'"
+      [disabled]="isQuerying || !questionInput.trim()"
+      (click)="sendQuestion()">
+      @if (isQuerying) {
+        <mat-spinner diameter="20" />
+      } @else {
+        <mat-icon>send</mat-icon>
+      }
+    </button>
+  </div>
+
+</div>
