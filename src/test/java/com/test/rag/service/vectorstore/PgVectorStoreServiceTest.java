@@ -1,6 +1,7 @@
 package com.test.rag.service.vectorstore;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.test.rag.model.CrawlSiteSummary;
 import com.test.rag.model.DocumentChunk;
 import com.test.rag.model.EmbeddedChunk;
 import com.test.rag.model.ScoredChunk;
@@ -24,8 +25,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -254,6 +259,72 @@ class PgVectorStoreServiceTest {
 
         assertThat(result.get(0).filename()).isEqualTo("apple.pdf");
         assertThat(result.get(1).filename()).isEqualTo("zebra.pdf");
+    }
+
+    // =========================================================================
+    // listCrawledSites
+    // =========================================================================
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void listCrawledSites_returns_grouped_summaries() {
+        List<CrawlSiteSummary> expected = List.of(
+                new CrawlSiteSummary("https://example.com", 3, 21, "2026-05-14T10:00:00Z"));
+
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenReturn(expected);
+
+        List<CrawlSiteSummary> result = service.listCrawledSites();
+
+        assertEquals(1, result.size());
+        assertEquals("https://example.com", result.get(0).rootUrl());
+        assertEquals(3, result.get(0).pagesIngested());
+        assertEquals(21, result.get(0).totalChunks());
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void listCrawledSites_returns_empty_when_no_crawled_pages() {
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class))).thenReturn(List.of());
+
+        List<CrawlSiteSummary> result = service.listCrawledSites();
+
+        assertTrue(result.isEmpty());
+    }
+
+    // =========================================================================
+    // deleteByCrawlRoot
+    // =========================================================================
+
+    @Test
+    void deleteByCrawlRoot_returns_true_when_rows_exist() {
+        when(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM vector_store WHERE metadata->>'crawl-root-url' = ?",
+                Integer.class, "https://example.com"))
+                .thenReturn(5);
+        when(jdbcTemplate.update(
+                "DELETE FROM vector_store WHERE metadata->>'crawl-root-url' = ?",
+                "https://example.com"))
+                .thenReturn(5);
+
+        boolean result = service.deleteByCrawlRoot("https://example.com");
+
+        assertTrue(result);
+        verify(jdbcTemplate).update(
+                "DELETE FROM vector_store WHERE metadata->>'crawl-root-url' = ?",
+                "https://example.com");
+    }
+
+    @Test
+    void deleteByCrawlRoot_returns_false_when_no_rows_exist() {
+        when(jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM vector_store WHERE metadata->>'crawl-root-url' = ?",
+                Integer.class, "https://unknown.com"))
+                .thenReturn(0);
+
+        boolean result = service.deleteByCrawlRoot("https://unknown.com");
+
+        assertFalse(result);
+        verify(jdbcTemplate, never()).update(anyString(), eq("https://unknown.com"));
     }
 
     // --- helpers ---

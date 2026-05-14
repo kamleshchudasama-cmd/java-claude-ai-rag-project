@@ -2,6 +2,7 @@ package com.test.rag.service.vectorstore;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.test.rag.model.CrawlSiteSummary;
 import com.test.rag.model.DocumentChunk;
 import com.test.rag.model.DocumentSummary;
 import com.test.rag.model.EmbeddedChunk;
@@ -158,6 +159,41 @@ public class PgVectorStoreService implements VectorStoreService {
                 summaries.size(), allChunks.size(), System.currentTimeMillis() - start);
 
         return summaries;
+    }
+
+    @Override
+    public List<CrawlSiteSummary> listCrawledSites() {
+        String sql = """
+                SELECT
+                    metadata->>'crawl-root-url' AS root_url,
+                    COUNT(DISTINCT metadata->>'source_id') AS pages_ingested,
+                    COUNT(*) AS total_chunks,
+                    MAX(metadata->>'upload-timestamp') AS last_crawled_at
+                FROM vector_store
+                WHERE metadata->>'crawl-root-url' IS NOT NULL
+                GROUP BY metadata->>'crawl-root-url'
+                ORDER BY last_crawled_at DESC
+                """;
+        return jdbcTemplate.query(sql, (rs, rowNum) -> new CrawlSiteSummary(
+                rs.getString("root_url"),
+                rs.getInt("pages_ingested"),
+                rs.getInt("total_chunks"),
+                rs.getString("last_crawled_at")
+        ));
+    }
+
+    @Override
+    @Transactional
+    public boolean deleteByCrawlRoot(String rootUrl) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM vector_store WHERE metadata->>'crawl-root-url' = ?",
+                Integer.class, rootUrl);
+        if (Objects.isNull(count) || count == 0) {
+            return false;
+        }
+        jdbcTemplate.update("DELETE FROM vector_store WHERE metadata->>'crawl-root-url' = ?", rootUrl);
+        log.info("deleteByCrawlRoot: deleted {} chunks for rootUrl='{}'", count, rootUrl);
+        return true;
     }
 
     private String toVectorString(float[] embedding) {

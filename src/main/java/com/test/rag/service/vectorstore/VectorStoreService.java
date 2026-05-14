@@ -1,5 +1,6 @@
 package com.test.rag.service.vectorstore;
 
+import com.test.rag.model.CrawlSiteSummary;
 import com.test.rag.model.DocumentSummary;
 import com.test.rag.model.EmbeddedChunk;
 import com.test.rag.model.ScoredChunk;
@@ -35,4 +36,18 @@ public interface VectorStoreService {
      * Results are sorted alphabetically by filename.
      */
     List<DocumentSummary> listDocuments();
+
+    /**
+     * Returns one {@link CrawlSiteSummary} per unique crawl root URL stored in the vector store.
+     * Results are grouped by {@code crawl-root-url} metadata and ordered by most recently crawled.
+     */
+    List<CrawlSiteSummary> listCrawledSites();
+
+    /**
+     * Deletes all chunks belonging to the given crawl root URL atomically.
+     *
+     * @return {@code true} if one or more chunks were found and deleted;
+     *         {@code false} if no chunks existed for that root URL.
+     */
+    boolean deleteByCrawlRoot(String rootUrl);
 }
