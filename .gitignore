@@ -1,5 +1,6 @@
 # Secrets — never commit
 .env
+src/main/resources/application.properties
 
 # Maven
 target/
