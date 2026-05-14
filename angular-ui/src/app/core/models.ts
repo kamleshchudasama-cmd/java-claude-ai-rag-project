@@ -30,3 +30,23 @@ export interface ChatMessage {
   citations?: Citation[];
   totalTokens?: number;
 }
+
+export interface CrawlStartResponse {
+  jobId: string;
+}
+
+export interface CrawlStatusResponse {
+  jobId: string;
+  status: 'RUNNING' | 'DONE' | 'FAILED';
+  pagesVisited: number;
+  pagesIngested: number;
+  totalChunks: number;
+  errorMessage: string | null;
+}
+
+export interface CrawlSiteSummary {
+  rootUrl: string;
+  pagesIngested: number;
+  totalChunks: number;
+  lastCrawledAt: string;
+}

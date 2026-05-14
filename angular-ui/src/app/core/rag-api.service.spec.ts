@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { RagApiService } from './rag-api.service';
-import { RagResponse } from './models';
+import { RagResponse, CrawlStartResponse } from './models';
 import { environment } from '../../environments/environment';
 
 describe('RagApiService', () => {
@@ -75,5 +75,48 @@ describe('RagApiService', () => {
     const req = http.expectOne(`${base}/api/rag/documents`);
     req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
     expect(caughtError.status).toBe(500);
+  });
+
+  describe('startCrawl', () => {
+    it('posts to /api/rag/crawl with url param', () => {
+      const mockResponse: CrawlStartResponse = { jobId: 'job123' };
+      service.startCrawl('https://example.com').subscribe(res => {
+        expect(res.jobId).toBe('job123');
+      });
+      const req = http.expectOne(r =>
+        r.url.includes('/api/rag/crawl') && r.params.get('url') === 'https://example.com');
+      expect(req.request.method).toBe('POST');
+      req.flush(mockResponse);
+    });
+  });
+
+  describe('getCrawlStatus', () => {
+    it('gets status by jobId', () => {
+      service.getCrawlStatus('job123').subscribe();
+      const req = http.expectOne(`${environment.apiBaseUrl}/api/rag/crawl/job123/status`);
+      expect(req.request.method).toBe('GET');
+      req.flush({ jobId: 'job123', status: 'RUNNING', pagesVisited: 2,
+                  pagesIngested: 2, totalChunks: 14, errorMessage: null });
+    });
+  });
+
+  describe('listCrawledSites', () => {
+    it('gets list from /api/rag/crawl/sites', () => {
+      service.listCrawledSites().subscribe();
+      const req = http.expectOne(`${environment.apiBaseUrl}/api/rag/crawl/sites`);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+  });
+
+  describe('deleteCrawledSite', () => {
+    it('deletes by rootUrl param', () => {
+      service.deleteCrawledSite('https://example.com').subscribe();
+      const req = http.expectOne(r =>
+        r.url.includes('/api/rag/crawl/sites') &&
+        r.params.get('rootUrl') === 'https://example.com');
+      expect(req.request.method).toBe('DELETE');
+      req.flush(null);
+    });
   });
 });
