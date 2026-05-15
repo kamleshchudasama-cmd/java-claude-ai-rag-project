@@ -167,4 +167,28 @@ describe('DocumentsComponent', () => {
     expect(meta.textContent).toContain('Jun');
     expect(meta.textContent).toContain('15');
   });
+
+  it('iconFor returns videocam for video/mp4', () => {
+    expect(component.iconFor('video/mp4')).toBe('videocam');
+  });
+
+  it('iconFor returns videocam for video/quicktime', () => {
+    expect(component.iconFor('video/quicktime')).toBe('videocam');
+  });
+
+  it('typeBadge returns VIDEO for video/mp4', () => {
+    expect(component.typeBadge('video/mp4')).toBe('VIDEO');
+  });
+
+  it('doc card renders VIDEO badge for a video document', () => {
+    const videoDoc: DocumentSummary = {
+      ...mockDoc,
+      filename: 'lecture.mp4',
+      contentType: 'video/mp4'
+    };
+    fakeService.documents.set([videoDoc]);
+    fixture.detectChanges();
+    const meta: HTMLElement = fixture.nativeElement.querySelector('.doc-meta');
+    expect(meta.textContent).toContain('VIDEO');
+  });
 });

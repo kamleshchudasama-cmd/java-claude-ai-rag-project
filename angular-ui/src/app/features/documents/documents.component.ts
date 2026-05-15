@@ -38,6 +38,7 @@ export class DocumentsComponent implements OnInit {
     if (contentType?.includes('pdf')) return 'picture_as_pdf';
     if (contentType?.includes('word')) return 'description';
     if (contentType?.includes('html')) return 'code';
+    if (contentType?.startsWith('video/')) return 'videocam';
     return 'insert_drive_file';
   }
 
@@ -45,6 +46,7 @@ export class DocumentsComponent implements OnInit {
     if (contentType?.includes('pdf')) return 'PDF';
     if (contentType?.includes('word')) return 'DOCX';
     if (contentType?.includes('html')) return 'HTML';
+    if (contentType?.startsWith('video/')) return 'VIDEO';
     return 'File';
   }
 
