@@ -70,15 +70,16 @@ class OpenAiVideoTranscriptionServiceTest {
     }
 
     @Test
-    void transcribe_whenWhisperThrowsRuntimeException_propagates() {
+    void transcribe_whenWhisperThrowsRuntimeException_wrapsInDocumentParseException() {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "fail.mp4", "video/mp4", "dummy".getBytes());
         when(transcriptionModel.call(any(AudioTranscriptionPrompt.class)))
                 .thenThrow(new RuntimeException("Whisper API error"));
 
         assertThatThrownBy(() -> service.transcribe(file))
-                .isInstanceOf(RuntimeException.class)
-                .hasMessage("Whisper API error");
+                .isInstanceOf(DocumentParseException.class)
+                .hasMessageContaining("Whisper API call failed")
+                .hasCauseInstanceOf(RuntimeException.class);
     }
 
     @Test

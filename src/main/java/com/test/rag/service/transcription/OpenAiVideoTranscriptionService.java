@@ -8,7 +8,11 @@ import org.springframework.ai.audio.transcription.AudioTranscriptionResponse;
 import org.springframework.ai.openai.OpenAiAudioTranscriptionModel;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.retry.annotation.Backoff;
+import org.springframework.retry.annotation.Retryable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -18,6 +22,7 @@ import java.util.Objects;
 public class OpenAiVideoTranscriptionService implements VideoTranscriptionService {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAiVideoTranscriptionService.class);
+    private static final String DEFAULT_FILENAME = "video";
 
     private final OpenAiAudioTranscriptionModel transcriptionModel;
 
@@ -26,9 +31,14 @@ public class OpenAiVideoTranscriptionService implements VideoTranscriptionServic
     }
 
     @Override
+    @Retryable(
+            retryFor = {HttpClientErrorException.TooManyRequests.class, ResourceAccessException.class},
+            maxAttempts = 3,
+            backoff = @Backoff(delay = 10_000)
+    )
     public String transcribe(MultipartFile file) {
         String filename = Objects.nonNull(file.getOriginalFilename())
-                ? file.getOriginalFilename() : "video";
+                ? file.getOriginalFilename() : DEFAULT_FILENAME;
         long startMs = System.currentTimeMillis();
 
         byte[] bytes;
@@ -45,8 +55,18 @@ public class OpenAiVideoTranscriptionService implements VideoTranscriptionServic
             }
         };
 
-        AudioTranscriptionResponse response = transcriptionModel.call(
-                new AudioTranscriptionPrompt(audioResource));
+        AudioTranscriptionResponse response;
+        try {
+            response = transcriptionModel.call(new AudioTranscriptionPrompt(audioResource));
+        } catch (HttpClientErrorException.TooManyRequests | ResourceAccessException e) {
+            throw e; // let @Retryable intercept
+        } catch (RuntimeException e) {
+            throw new DocumentParseException("Whisper API call failed for: " + filename, e);
+        }
+
+        if (Objects.isNull(response) || Objects.isNull(response.getResult())) {
+            throw new DocumentParseException("Empty response from Whisper for: " + filename);
+        }
 
         String transcript = response.getResult().getOutput();
         if (Objects.isNull(transcript) || transcript.isBlank()) {
