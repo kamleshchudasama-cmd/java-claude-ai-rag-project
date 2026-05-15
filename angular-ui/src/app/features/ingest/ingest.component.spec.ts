@@ -167,4 +167,35 @@ describe('IngestComponent', () => {
     expect(component.state).toBe('uploading');
     expect(component.selectedFile).not.toBeNull();
   });
+
+  it('accepts mp4 video file and transitions to fileSelected state', () => {
+    const mp4File = new File([new ArrayBuffer(100)], 'lecture.mp4', { type: 'video/mp4' });
+    (component as any).setFile(mp4File);
+    fixture.detectChanges();
+    expect(component.state).toBe('fileSelected');
+  });
+
+  it('accepts quicktime video file and transitions to fileSelected state', () => {
+    const movFile = new File([new ArrayBuffer(100)], 'clip.mov', { type: 'video/quicktime' });
+    (component as any).setFile(movFile);
+    expect(component.state).toBe('fileSelected');
+  });
+
+  it('accepts webm video file and transitions to fileSelected state', () => {
+    const webmFile = new File([new ArrayBuffer(100)], 'screen.webm', { type: 'video/webm' });
+    (component as any).setFile(webmFile);
+    expect(component.state).toBe('fileSelected');
+  });
+
+  it('iconFor returns videocam for video/mp4', () => {
+    expect(component.iconFor('video/mp4')).toBe('videocam');
+  });
+
+  it('typeBadge returns VIDEO for video/mp4', () => {
+    expect(component.typeBadge('video/mp4')).toBe('VIDEO');
+  });
+
+  it('typeBadge returns VIDEO for video/quicktime', () => {
+    expect(component.typeBadge('video/quicktime')).toBe('VIDEO');
+  });
 });

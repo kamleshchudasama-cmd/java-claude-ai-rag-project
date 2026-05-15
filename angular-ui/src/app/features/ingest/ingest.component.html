@@ -15,10 +15,10 @@
         Drop file here or
         <span class="browse-link" (click)="$event.stopPropagation(); fileInput.click()">browse</span>
       </p>
-      <p class="drop-types">PDF · DOCX · HTML · MD · up to 50 MB</p>
+      <p class="drop-types">PDF · DOCX · HTML · MD · MP4 · MOV · WEBM · up to 50 MB (5 MB for video)</p>
     </div>
 
-    <input #fileInput type="file" accept=".pdf,.docx,.html,.md" class="hidden-input"
+    <input #fileInput type="file" accept=".pdf,.docx,.html,.md,.mp4,.mov,.avi,.webm" class="hidden-input"
       (change)="onFileSelected($event)" />
 
     @if (state === 'fileSelected' || state === 'uploading') {

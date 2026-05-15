@@ -12,7 +12,12 @@ const ALLOWED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'text/html',
   'text/markdown',
-  'text/x-markdown'
+  'text/x-markdown',
+  'video/mp4',
+  'video/quicktime',
+  'video/x-msvideo',
+  'video/webm',
+  'video/mpeg'
 ];
 const MAX_BYTES = 50 * 1024 * 1024;
 
@@ -87,7 +92,7 @@ export class IngestComponent {
 
   private setFile(file: File): void {
     if (!ALLOWED_TYPES.includes(file.type)) {
-      this.errorMessage = `Unsupported file type: "${file.type || 'unknown'}". Use PDF, DOCX, HTML, or MD.`;
+      this.errorMessage = `Unsupported file type: "${file.type || 'unknown'}". Use PDF, DOCX, HTML, MD, MP4, MOV, AVI, or WEBM.`;
       return;
     }
     if (file.size > MAX_BYTES) {
@@ -105,6 +110,7 @@ export class IngestComponent {
     if (type.includes('word')) return 'description';
     if (type.includes('html')) return 'code';
     if (type.includes('markdown')) return 'article';
+    if (type.startsWith('video/')) return 'videocam';
     return 'insert_drive_file';
   }
 
@@ -113,6 +119,7 @@ export class IngestComponent {
     if (type.includes('word')) return 'DOCX';
     if (type.includes('html')) return 'HTML';
     if (type.includes('markdown')) return 'MD';
+    if (type.startsWith('video/')) return 'VIDEO';
     return 'File';
   }
 
