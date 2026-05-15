@@ -21,13 +21,16 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.HexFormat;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
+import java.util.Set;
 
 @Service
 public class JsoupWebCrawlerService implements WebCrawlerService {
@@ -66,34 +69,49 @@ public class JsoupWebCrawlerService implements WebCrawlerService {
     }
 
     private void crawlInternal(String url, String jobId) {
-        Document rootDoc;
-        try {
-            rootDoc = fetchPage(url);
-        } catch (IOException e) {
-            throw new CrawlException("Cannot reach URL: " + url + " — " + e.getMessage(), e);
-        }
-
         String rootDomain = extractDomain(url);
-        List<String> urls = new ArrayList<>();
-        urls.add(url);
 
-        rootDoc.select("a[href]").stream()
-                .map(a -> a.absUrl("href"))
-                .filter(href -> !href.isBlank())
-                .filter(href -> extractDomain(href).equals(rootDomain))
-                .filter(href -> !href.equals(url))
-                .distinct()
-                .limit((long) maxPages - 1)
-                .forEach(urls::add);
+        Queue<String> queue = new ArrayDeque<>();
+        Set<String> visited = new LinkedHashSet<>();
+        queue.add(url);
+        visited.add(url);
 
         int pagesVisited = 0;
         int pagesIngested = 0;
         int totalChunks = 0;
 
-        for (String pageUrl : urls) {
+        while (!queue.isEmpty()) {
+            String pageUrl = queue.poll();
             pagesVisited++;
+
+            Document doc;
             try {
-                Document doc = pageUrl.equals(url) ? rootDoc : fetchPage(pageUrl);
+                doc = fetchPage(pageUrl);
+            } catch (IOException e) {
+                if (pageUrl.equals(url)) {
+                    throw new CrawlException("Cannot reach URL: " + url + " — " + e.getMessage(), e);
+                }
+                log.warn("Skipping page='{}': {}", pageUrl, e.getMessage());
+                crawlJobStore.update(jobId, "RUNNING", pagesVisited, pagesIngested, totalChunks, null);
+                continue;
+            }
+
+            // Enqueue new same-domain links found on this page (BFS, strips URL fragments)
+            doc.select("a[href]").stream()
+                    .map(a -> a.absUrl("href"))
+                    .map(href -> href.contains("#") ? href.substring(0, href.indexOf('#')) : href)
+                    .filter(href -> !href.isBlank())
+                    .filter(href -> extractDomain(href).equals(rootDomain))
+                    .filter(href -> !visited.contains(href))
+                    .distinct()
+                    .forEach(href -> {
+                        if (visited.size() < maxPages) {
+                            visited.add(href);
+                            queue.add(href);
+                        }
+                    });
+
+            try {
                 ParsedDocument parsed = buildParsedDocument(pageUrl, url, doc);
                 List<DocumentChunk> chunks = chunkingService.chunk(parsed);
                 List<EmbeddedChunk> embedded = embeddingService.embed(chunks);
@@ -102,8 +120,9 @@ public class JsoupWebCrawlerService implements WebCrawlerService {
                 totalChunks += embedded.size();
                 log.info("Crawled page='{}' chunks={}", pageUrl, embedded.size());
             } catch (Exception e) {
-                log.warn("Skipping page='{}': {}", pageUrl, e.getMessage());
+                log.warn("Skipping ingest for page='{}': {}", pageUrl, e.getMessage());
             }
+
             crawlJobStore.update(jobId, "RUNNING", pagesVisited, pagesIngested, totalChunks, null);
         }
 

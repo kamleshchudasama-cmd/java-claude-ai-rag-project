@@ -154,6 +154,69 @@ class JsoupWebCrawlerServiceTest {
     }
 
     @Test
+    void crawl_follows_links_at_multiple_depths() {
+        Document rootDoc = makeDoc("Root", "Root content", "https://example.com",
+                "https://example.com/page2");
+        Document page2Doc = makeDoc("Page 2", "Page 2 content", "https://example.com/page2",
+                "https://example.com/page3");
+        Document page3Doc = makeDoc("Page 3", "Page 3 content", "https://example.com/page3");
+        DocumentChunk chunk = new DocumentChunk("c1", "content", 0, 5, Map.of("source_id", "x"));
+        EmbeddedChunk embedded = new EmbeddedChunk(chunk, new float[1536]);
+
+        when(chunkingService.chunk(any())).thenReturn(List.of(chunk));
+        when(embeddingService.embed(any())).thenReturn(List.of(embedded));
+
+        JsoupWebCrawlerService testService = new JsoupWebCrawlerService(
+                chunkingService, embeddingService, vectorStoreService, crawlJobStore,
+                new RagProperties()) {
+            @Override
+            protected Document fetchPage(String url) {
+                if (url.equals("https://example.com")) return rootDoc;
+                if (url.equals("https://example.com/page2")) return page2Doc;
+                if (url.equals("https://example.com/page3")) return page3Doc;
+                throw new RuntimeException("Should not fetch: " + url);
+            }
+        };
+
+        testService.crawl("https://example.com", "job1");
+
+        verify(vectorStoreService, times(3)).upsert(any());
+        verify(crawlJobStore).update(eq("job1"), eq("DONE"),
+                eq(3), eq(3), eq(3), isNull());
+    }
+
+    @Test
+    void crawl_respects_max_pages_limit() {
+        Document rootDoc = makeDoc("Root", "Root content", "https://example.com",
+                "https://example.com/a", "https://example.com/b", "https://example.com/c");
+        Document subDoc = makeDoc("Sub", "sub content", "https://example.com/a");
+        DocumentChunk chunk = new DocumentChunk("c1", "content", 0, 5, Map.of("source_id", "x"));
+        EmbeddedChunk embedded = new EmbeddedChunk(chunk, new float[1536]);
+
+        when(chunkingService.chunk(any())).thenReturn(List.of(chunk));
+        when(embeddingService.embed(any())).thenReturn(List.of(embedded));
+
+        RagProperties props = new RagProperties();
+        props.setCrawlMaxPages(2);
+        props.setCrawlConnectTimeoutMs(5000);
+
+        JsoupWebCrawlerService testService = new JsoupWebCrawlerService(
+                chunkingService, embeddingService, vectorStoreService, crawlJobStore, props) {
+            @Override
+            protected Document fetchPage(String url) {
+                if (url.equals("https://example.com")) return rootDoc;
+                return subDoc;
+            }
+        };
+
+        testService.crawl("https://example.com", "job1");
+
+        verify(vectorStoreService, times(2)).upsert(any());
+        verify(crawlJobStore).update(eq("job1"), eq("DONE"),
+                eq(2), eq(2), eq(2), isNull());
+    }
+
+    @Test
     void crawl_metadata_contains_page_url_and_crawl_root_url() {
         Document doc = makeDoc("Title", "Body text", "https://example.com");
 
