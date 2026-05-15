@@ -34,6 +34,9 @@ public class RagProperties {
     // --- Document loading ---
     private int maxContentChars = 500_000;
 
+    // --- Video ---
+    private long maxVideoSizeBytes = 5_242_880L;
+
     // --- Crawl ---
     private int crawlMaxPages = 50;
     private int crawlConnectTimeoutMs = 10000;
@@ -79,6 +82,9 @@ public class RagProperties {
 
     public int getMaxContentChars() { return maxContentChars; }
     public void setMaxContentChars(int maxContentChars) { this.maxContentChars = maxContentChars; }
+
+    public long getMaxVideoSizeBytes() { return maxVideoSizeBytes; }
+    public void setMaxVideoSizeBytes(long maxVideoSizeBytes) { this.maxVideoSizeBytes = maxVideoSizeBytes; }
 
     public int getCrawlMaxPages() { return crawlMaxPages; }
     public void setCrawlMaxPages(int crawlMaxPages) { this.crawlMaxPages = crawlMaxPages; }
