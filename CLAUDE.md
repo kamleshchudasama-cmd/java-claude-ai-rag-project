@@ -193,6 +193,7 @@ under the `rag.*` prefix. **Never hardcode these in service classes.**
 | `maxOutputTokens` | 2048 | LLM max response length |
 | `maxContextTokens` | 4096 | Max tokens assembled into prompt context |
 | `maxContentChars` | 500,000 | Max document size accepted by loader |
+| `maxVideoSizeBytes` | 5242880 | Max accepted video file size in bytes for transcription |
 
 ---
 
