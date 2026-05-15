@@ -29,7 +29,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 
-@Service
+@Service("tikaLoader")
 public class TikaDocumentLoaderService implements DocumentLoaderService {
 
     private static final Logger log = LoggerFactory.getLogger(TikaDocumentLoaderService.class);
